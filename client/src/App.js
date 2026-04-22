@@ -7,11 +7,11 @@ import GameLobby from './components/GameLobby';
 import BingoGame from './components/BingoGame';
 import AdminPanel from './components/AdminPanel';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+const API_URL = process.env.REACT_APP_API_URL || window.location.origin;
 const socket = io(API_URL);
 
 // Development mode - bypass Telegram auth for local testing
-const DEV_MODE = true; // Force development mode for now
+const DEV_MODE = !window.Telegram?.WebApp;
 
 function App() {
   const [user, setUser] = useState(null);
@@ -20,18 +20,44 @@ function App() {
   const [initData, setInitData] = useState('');
 
   useEffect(() => {
-    console.log('🔧 App starting... FORCED DEV MODE');
-    
-    // Force create mock user immediately
-    console.log('🔧 Creating mock user immediately');
-    setUser({
-      id: 1,
-      telegram_id: 991793142,
-      username: 'TestUser',
-      main_wallet_balance: 100.00,
-      play_wallet_balance: 50.00
+    console.log('🔧 App starting...', { 
+      hasTelegram: !!window.Telegram?.WebApp, 
+      DEV_MODE 
     });
-    setInitData('mock_init_data_for_development');
+    
+    if (window.Telegram?.WebApp) {
+      const tg = window.Telegram.WebApp;
+      tg.ready();
+      tg.expand();
+      setInitData(tg.initData);
+      
+      if (tg.initData) {
+        console.log('🔐 Using Telegram auth');
+        loginUser(tg.initData);
+      } else {
+        console.log('🔧 No Telegram initData, using dev mode');
+        // Fallback to dev mode
+        setUser({
+          id: 1,
+          telegram_id: 991793142,
+          username: 'TestUser',
+          main_wallet_balance: 100.00,
+          play_wallet_balance: 50.00
+        });
+        setInitData('mock_init_data_for_development');
+      }
+    } else if (DEV_MODE) {
+      // Development mode - create mock user
+      console.log('🔧 Development mode: Creating mock user');
+      setUser({
+        id: 1,
+        telegram_id: 991793142,
+        username: 'TestUser',
+        main_wallet_balance: 100.00,
+        play_wallet_balance: 50.00
+      });
+      setInitData('mock_init_data_for_development');
+    }
   }, []);
 
   const loginUser = async (initDataString) => {
