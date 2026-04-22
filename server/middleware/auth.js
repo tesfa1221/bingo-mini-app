@@ -48,6 +48,14 @@ function checkAuth(req, res, next) {
   
   if (userJson) {
     req.telegramUser = JSON.parse(userJson);
+  } else {
+    // Fallback: create anonymous user with unique ID from auth_date
+    const authDate = urlParams.get('auth_date') || Date.now();
+    req.telegramUser = {
+      id: parseInt(authDate),
+      username: 'Anonymous',
+      first_name: 'Anonymous'
+    };
   }
   
   next();
