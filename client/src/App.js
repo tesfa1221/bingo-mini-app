@@ -132,11 +132,24 @@ function App() {
 
   return (
     <div className="app">
+      {user.username === 'Anonymous' && !DEV_MODE && (
+        <div style={{
+          background: 'linear-gradient(135deg, #D4AF37, #FFD700)',
+          color: '#121212',
+          padding: '12px 20px',
+          textAlign: 'center',
+          fontWeight: '600',
+          borderBottom: '2px solid #D4AF37'
+        }}>
+          ⚠️ Please start the bot first: Send /start to @Odabingobot to register
+        </div>
+      )}
+      
       <header className="app-header">
-        <h1>🎱 Bingo Game</h1>
+        <h1>🎱 Kebrchacha Bingo</h1>
         <div className="user-info">
           <span>{user.username}</span>
-          {DEV_MODE && <span style={{ color: '#f59e0b', fontSize: '12px' }}> (DEV)</span>}
+          {DEV_MODE && <span style={{ color: '#39FF14', fontSize: '12px' }}> (DEV)</span>}
           <div className="balance">
             <span>💰 {user.main_wallet_balance}</span>
             <span>🎮 {user.play_wallet_balance}</span>

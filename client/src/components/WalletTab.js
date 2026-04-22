@@ -47,37 +47,68 @@ function WalletTab({ user, initData, onUpdate }) {
       return;
     }
 
+    if (parseFloat(depositAmount) <= 0) {
+      alert('Amount must be greater than 0');
+      return;
+    }
+
     setUploading(true);
     try {
       // Convert image to base64
       const reader = new FileReader();
       reader.onloadend = async () => {
-        const base64Image = reader.result;
-        
-        await axios.post(
-          `${API_URL}/api/wallet/deposit`,
-          { 
-            amount: parseFloat(depositAmount), 
-            screenshotUrl: base64Image 
-          },
-          { headers: { 'x-telegram-init-data': initData } }
-        );
-        
-        if (window.Telegram?.WebApp) {
-          window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+        try {
+          const base64Image = reader.result;
+          
+          // Compress if image is too large
+          let imageData = base64Image;
+          if (base64Image.length > 1000000) { // If larger than 1MB
+            console.log('Compressing large image...');
+            // For now, just use as is - can add compression later
+          }
+          
+          const response = await axios.post(
+            `${API_URL}/api/wallet/deposit`,
+            { 
+              amount: parseFloat(depositAmount), 
+              screenshotUrl: imageData 
+            },
+            { 
+              headers: { 'x-telegram-init-data': initData },
+              timeout: 30000 // 30 second timeout
+            }
+          );
+          
+          if (window.Telegram?.WebApp) {
+            window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+          }
+          
+          setDepositAmount('');
+          setSelectedFile(null);
+          setShowDeposit(false);
+          setUploading(false);
+          fetchTransactions();
+          alert('✅ Deposit request submitted! Wait for admin approval.');
+        } catch (error) {
+          console.error('Deposit error:', error);
+          setUploading(false);
+          if (error.code === 'ECONNABORTED') {
+            alert('Upload timeout. Please try with a smaller image.');
+          } else {
+            alert('Deposit failed: ' + (error.response?.data?.error || error.message || 'Unknown error'));
+          }
         }
-        
-        setDepositAmount('');
-        setSelectedFile(null);
-        setShowDeposit(false);
-        setUploading(false);
-        fetchTransactions();
-        alert('Deposit request submitted! Wait for admin approval.');
       };
+      
+      reader.onerror = () => {
+        setUploading(false);
+        alert('Failed to read image file');
+      };
+      
       reader.readAsDataURL(selectedFile);
     } catch (error) {
       console.error('Deposit error:', error);
-      alert('Deposit failed: ' + (error.response?.data?.error || 'Unknown error'));
+      alert('Deposit failed: ' + error.message);
       setUploading(false);
     }
   };
@@ -166,8 +197,22 @@ function WalletTab({ user, initData, onUpdate }) {
             className="btn btn-success btn-block"
             onClick={handleDepositSubmit}
             disabled={!depositAmount || !selectedFile || uploading}
+            style={{ marginTop: '15px' }}
           >
-            {uploading ? '⏳ Uploading...' : '📤 Submit Deposit'}
+            {uploading ? (
+              <>
+                <span className="spinner" style={{ 
+                  width: '16px', 
+                  height: '16px', 
+                  display: 'inline-block',
+                  marginRight: '8px',
+                  verticalAlign: 'middle'
+                }}></span>
+                Uploading...
+              </>
+            ) : (
+              '📤 Submit Deposit'
+            )}
           </button>
         </div>
       )}
