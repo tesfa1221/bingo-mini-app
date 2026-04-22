@@ -8,28 +8,11 @@ function WalletTab({ user, initData, onUpdate }) {
   const [depositAmount, setDepositAmount] = useState('');
   const [transferAmount, setTransferAmount] = useState('');
   const [showDeposit, setShowDeposit] = useState(false);
-  const [uploadWidget, setUploadWidget] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchTransactions();
-    
-    if (window.cloudinary) {
-      const widget = window.cloudinary.createUploadWidget(
-        {
-          cloudName: process.env.REACT_APP_CLOUDINARY_CLOUD_NAME,
-          uploadPreset: process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET,
-          sources: ['local', 'camera'],
-          multiple: false,
-          maxFiles: 1
-        },
-        (error, result) => {
-          if (!error && result && result.event === 'success') {
-            handleDepositSubmit(result.info.secure_url);
-          }
-        }
-      );
-      setUploadWidget(widget);
-    }
   }, []);
 
   const fetchTransactions = async () => {
@@ -43,25 +26,59 @@ function WalletTab({ user, initData, onUpdate }) {
     }
   };
 
-  const handleDepositSubmit = async (screenshotUrl) => {
-    try {
-      await axios.post(
-        `${API_URL}/api/wallet/deposit`,
-        { amount: parseFloat(depositAmount), screenshotUrl },
-        { headers: { 'x-telegram-init-data': initData } }
-      );
-      
-      if (window.Telegram?.WebApp) {
-        window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File too large! Maximum 5MB');
+        return;
       }
-      
-      setDepositAmount('');
-      setShowDeposit(false);
-      fetchTransactions();
-      alert('Deposit request submitted! Wait for admin approval.');
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+      setSelectedFile(file);
+    }
+  };
+
+  const handleDepositSubmit = async () => {
+    if (!selectedFile || !depositAmount) {
+      alert('Please enter amount and select screenshot');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      // Convert image to base64
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Image = reader.result;
+        
+        await axios.post(
+          `${API_URL}/api/wallet/deposit`,
+          { 
+            amount: parseFloat(depositAmount), 
+            screenshotUrl: base64Image 
+          },
+          { headers: { 'x-telegram-init-data': initData } }
+        );
+        
+        if (window.Telegram?.WebApp) {
+          window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+        }
+        
+        setDepositAmount('');
+        setSelectedFile(null);
+        setShowDeposit(false);
+        setUploading(false);
+        fetchTransactions();
+        alert('Deposit request submitted! Wait for admin approval.');
+      };
+      reader.readAsDataURL(selectedFile);
     } catch (error) {
       console.error('Deposit error:', error);
       alert('Deposit failed: ' + (error.response?.data?.error || 'Unknown error'));
+      setUploading(false);
     }
   };
 
@@ -133,12 +150,24 @@ function WalletTab({ user, initData, onUpdate }) {
             onChange={(e) => setDepositAmount(e.target.value)}
             className="input"
           />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFileSelect}
+            className="input"
+            style={{ padding: '8px' }}
+          />
+          {selectedFile && (
+            <p style={{ color: '#39FF14', marginTop: '10px' }}>
+              ✓ {selectedFile.name} selected
+            </p>
+          )}
           <button
-            className="btn btn-success"
-            onClick={() => uploadWidget?.open()}
-            disabled={!depositAmount || depositAmount <= 0}
+            className="btn btn-success btn-block"
+            onClick={handleDepositSubmit}
+            disabled={!depositAmount || !selectedFile || uploading}
           >
-            📸 Upload Screenshot
+            {uploading ? '⏳ Uploading...' : '📤 Submit Deposit'}
           </button>
         </div>
       )}
