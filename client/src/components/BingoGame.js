@@ -190,12 +190,19 @@ function BingoGame({ gameId, user, socket, initData, onLeave }) {
   if (isSpectator) {
     return (
       <div className="bingo-game spectator-mode">
-        <div className="game-header">
-          <button className="btn btn-secondary" onClick={onLeave}>← Leave</button>
-          <div className="game-stats">
-            <span className="prize-display">ደራሽ: {game.prize_pool} ETB</span>
-            <span className="spectator-badge">👁️ Spectator</span>
+        {/* Game Info Header */}
+        <div className="game-info-header">
+          <button className="btn btn-secondary back-btn" onClick={onLeave}>←</button>
+          <div className="game-details">
+            <div className="game-id">Game KEB{String(gameId).padStart(6, '0')}</div>
+            <div className="game-meta">
+              <span>👥 {game.current_players || 0}</span>
+              <span>💰 {game.bet_amount}</span>
+              <span>🏆 {game.prize_pool}</span>
+              <span>📞 {calledNumbers.length}/75</span>
+            </div>
           </div>
+          <div className="spectator-badge">👁️ Spectator</div>
         </div>
 
         {lastBall && (
@@ -205,19 +212,31 @@ function BingoGame({ gameId, user, socket, initData, onLeave }) {
           </div>
         )}
 
+        {/* 1-75 Number Grid */}
+        <div className="numbers-board">
+          <div className="board-header">
+            <div className="board-column">B<br/>1-15</div>
+            <div className="board-column">I<br/>16-30</div>
+            <div className="board-column">N<br/>31-45</div>
+            <div className="board-column">G<br/>46-60</div>
+            <div className="board-column">O<br/>61-75</div>
+          </div>
+          <div className="board-grid">
+            {Array.from({ length: 75 }, (_, i) => i + 1).map(num => (
+              <div
+                key={num}
+                className={`board-number ${calledNumbers.includes(num) ? 'called' : ''}`}
+              >
+                {num}
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="spectator-message">
           <h2>👁️ Spectator Mode</h2>
           <p>You are watching this game</p>
           <p>Join a game to play and win prizes!</p>
-        </div>
-
-        <div className="called-numbers-section">
-          <h4>Called Numbers ({calledNumbers.length}/75)</h4>
-          <div className="numbers-grid">
-            {calledNumbers.map((num, idx) => (
-              <span key={idx} className="called-number">{num}</span>
-            ))}
-          </div>
         </div>
 
         <button className="btn btn-primary btn-large" onClick={onLeave}>
@@ -235,14 +254,22 @@ function BingoGame({ gameId, user, socket, initData, onLeave }) {
 
   return (
     <div className="bingo-game">
-      <div className="game-header">
-        <button className="btn btn-secondary" onClick={onLeave}>← Leave</button>
-        <div className="game-stats">
-          <span className="prize-display">ደራሽ: {game.prize_pool} ETB</span>
-          <span className="timer-display">⏱️ {gameTimer}s</span>
+      {/* Game Info Header */}
+      <div className="game-info-header">
+        <button className="btn btn-secondary back-btn" onClick={onLeave}>←</button>
+        <div className="game-details">
+          <div className="game-id">Game KEB{String(gameId).padStart(6, '0')}</div>
+          <div className="game-meta">
+            <span>👥 {game.current_players || 0}</span>
+            <span>💰 {game.bet_amount}</span>
+            <span>🏆 {game.prize_pool}</span>
+            <span>📞 {calledNumbers.length}/75</span>
+          </div>
         </div>
+        <div className="timer-display">⏱️ {gameTimer}s</div>
       </div>
 
+      {/* Live Ball Display */}
       {lastBall && (
         <div className="last-ball-display">
           <div className="ball-animation">{lastBall}</div>
@@ -250,6 +277,28 @@ function BingoGame({ gameId, user, socket, initData, onLeave }) {
         </div>
       )}
 
+      {/* 1-75 Number Grid */}
+      <div className="numbers-board">
+        <div className="board-header">
+          <div className="board-column">B<br/>1-15</div>
+          <div className="board-column">I<br/>16-30</div>
+          <div className="board-column">N<br/>31-45</div>
+          <div className="board-column">G<br/>46-60</div>
+          <div className="board-column">O<br/>61-75</div>
+        </div>
+        <div className="board-grid">
+          {Array.from({ length: 75 }, (_, i) => i + 1).map(num => (
+            <div
+              key={num}
+              className={`board-number ${calledNumbers.includes(num) ? 'called' : ''}`}
+            >
+              {num}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* User's Bingo Card */}
       <div className="bingo-card">
         <div className="card-header">
           {columns.map(letter => (
@@ -281,6 +330,7 @@ function BingoGame({ gameId, user, socket, initData, onLeave }) {
         </div>
       </div>
 
+      {/* BINGO Button */}
       <button 
         className={`btn btn-bingo ${bingoEnabled ? 'enabled' : 'disabled'}`}
         onClick={claimBingo}
@@ -289,15 +339,7 @@ function BingoGame({ gameId, user, socket, initData, onLeave }) {
         {bingoEnabled ? '🎉 BINGO!' : `⏳ Wait (${5 - calledNumbers.length} more balls)`}
       </button>
 
-      <div className="called-numbers-section">
-        <h4>Called Numbers ({calledNumbers.length}/75)</h4>
-        <div className="numbers-grid">
-          {calledNumbers.map((num, idx) => (
-            <span key={idx} className="called-number">{num}</span>
-          ))}
-        </div>
-      </div>
-
+      {/* Game Instructions */}
       <div className="game-instructions">
         <p>📌 Click numbers on your card to mark them (only called numbers)</p>
         <p>🎯 Complete any pattern: Row, Column, Diagonal, or Four Corners</p>

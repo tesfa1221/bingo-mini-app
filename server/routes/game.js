@@ -216,4 +216,88 @@ router.get('/:gameId/status', checkAuth, async (req, res) => {
   }
 });
 
+// Get game history for user
+router.get('/history', checkAuth, async (req, res) => {
+  try {
+    const telegramId = req.telegramUser.id;
+    
+    const [users] = await db.query(
+      'SELECT id FROM users WHERE telegram_id = ?',
+      [telegramId]
+    );
+    
+    if (users.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const [games] = await db.query(
+      `SELECT g.*, t.card_id, t.is_winner,
+        (SELECT COUNT(*) FROM tickets WHERE game_id = g.id AND is_winner = 1) as winner_count
+       FROM games g
+       JOIN tickets t ON g.id = t.game_id
+       WHERE t.user_id = ?
+       ORDER BY g.created_at DESC
+       LIMIT 20`,
+      [users[0].id]
+    );
+    
+    res.json({ games });
+  } catch (error) {
+    console.error('Get game history error:', error);
+    res.status(500).json({ error: 'Failed to get game history' });
+  }
+});
+
+// Get user statistics
+router.get('/user-stats', checkAuth, async (req, res) => {
+  try {
+    const telegramId = req.telegramUser.id;
+    
+    const [users] = await db.query(
+      'SELECT id FROM users WHERE telegram_id = ?',
+      [telegramId]
+    );
+    
+    if (users.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const [stats] = await db.query(
+      `SELECT 
+        COUNT(*) as totalGames,
+        SUM(CASE WHEN t.is_winner = 1 THEN 1 ELSE 0 END) as gamesWon,
+        SUM(CASE WHEN t.is_winner = 1 THEN g.prize_pool / (SELECT COUNT(*) FROM tickets WHERE game_id = g.id AND is_winner = 1) ELSE 0 END) as totalEarnings,
+        0 as totalInvites
+       FROM tickets t
+       JOIN games g ON t.game_id = g.id
+       WHERE t.user_id = ?`,
+      [users[0].id]
+    );
+    
+    res.json(stats[0] || { totalGames: 0, gamesWon: 0, totalEarnings: 0, totalInvites: 0 });
+  } catch (error) {
+    console.error('Get user stats error:', error);
+    res.status(500).json({ error: 'Failed to get user stats' });
+  }
+});
+
+// Get general stats for welcome screen
+router.get('/stats', checkAuth, async (req, res) => {
+  try {
+    const [stats] = await db.query(
+      `SELECT 
+        COUNT(DISTINCT t.user_id) as activePlayers,
+        COUNT(*) as totalGames
+       FROM tickets t
+       JOIN games g ON t.game_id = g.id
+       WHERE g.created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)`
+    );
+    
+    res.json(stats[0] || { activePlayers: 0, totalGames: 0 });
+  } catch (error) {
+    console.error('Get stats error:', error);
+    res.status(500).json({ error: 'Failed to get stats' });
+  }
+});
+
 module.exports = router;

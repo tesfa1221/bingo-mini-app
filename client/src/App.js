@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import io from 'socket.io-client';
 import './App.css';
+import WelcomeScreen from './components/WelcomeScreen';
 import WalletTab from './components/WalletTab';
 import GameLobby from './components/GameLobby';
+import GameHistory from './components/GameHistory';
+import UserProfile from './components/UserProfile';
 import CardSelectionLobby from './components/CardSelectionLobby';
 import BingoGame from './components/BingoGame';
 import AdminPanel from './components/AdminPanel';
@@ -16,7 +19,7 @@ const DEV_MODE = !window.Telegram?.WebApp;
 
 function App() {
   const [user, setUser] = useState(null);
-  const [activeTab, setActiveTab] = useState('lobby');
+  const [activeTab, setActiveTab] = useState('welcome');
   const [currentGame, setCurrentGame] = useState(null);
   const [gamePhase, setGamePhase] = useState('lobby'); // 'lobby', 'card-selection', 'game'
   const [initData, setInitData] = useState('');
@@ -110,6 +113,11 @@ function App() {
     setActiveTab('game');
   };
 
+  const selectStake = (amount) => {
+    // Navigate to game lobby with selected stake
+    setActiveTab('lobby');
+  };
+
   const startGame = () => {
     setGamePhase('game');
   };
@@ -117,7 +125,7 @@ function App() {
   const leaveGame = () => {
     setCurrentGame(null);
     setGamePhase('lobby');
-    setActiveTab('lobby');
+    setActiveTab('welcome');
     refreshUser();
   };
 
@@ -153,18 +161,7 @@ function App() {
         </div>
       )}
       
-      <header className="app-header">
-        <h1>🎱 Kebrchacha Bingo</h1>
-        <div className="user-info">
-          <span>{user.username}</span>
-          {DEV_MODE && <span style={{ color: '#39FF14', fontSize: '12px' }}> (DEV)</span>}
-          <div className="balance">
-            <span>💰 {user.main_wallet_balance}</span>
-            <span>🎮 {user.play_wallet_balance}</span>
-          </div>
-        </div>
-      </header>
-
+      {/* Game View */}
       {activeTab === 'game' && currentGame ? (
         <>
           {gamePhase === 'card-selection' && (
@@ -189,35 +186,26 @@ function App() {
         </>
       ) : (
         <>
-          <nav className="tab-nav">
-            <button 
-              className={activeTab === 'lobby' ? 'active' : ''}
-              onClick={() => setActiveTab('lobby')}
-            >
-              🎮 Lobby
-            </button>
-            <button 
-              className={activeTab === 'wallet' ? 'active' : ''}
-              onClick={() => setActiveTab('wallet')}
-            >
-              💰 Wallet
-            </button>
-            {(user.telegram_id.toString() === process.env.REACT_APP_ADMIN_ID || DEV_MODE) && (
-              <button 
-                className={activeTab === 'admin' ? 'active' : ''}
-                onClick={() => setActiveTab('admin')}
-              >
-                ⚙️ Admin
-              </button>
-            )}
-          </nav>
-
+          {/* Main Content */}
           <main className="app-content">
+            {activeTab === 'welcome' && (
+              <WelcomeScreen 
+                user={user} 
+                initData={initData}
+                onSelectStake={selectStake}
+              />
+            )}
             {activeTab === 'lobby' && (
               <GameLobby 
                 user={user} 
                 initData={initData}
                 onJoinGame={joinGame}
+              />
+            )}
+            {activeTab === 'history' && (
+              <GameHistory 
+                user={user} 
+                initData={initData}
               />
             )}
             {activeTab === 'wallet' && (
@@ -227,10 +215,65 @@ function App() {
                 onUpdate={refreshUser}
               />
             )}
+            {activeTab === 'profile' && (
+              <UserProfile 
+                user={user} 
+                initData={initData}
+                onUpdate={refreshUser}
+              />
+            )}
             {activeTab === 'admin' && (
               <AdminPanel initData={initData} />
             )}
           </main>
+
+          {/* Bottom Navigation */}
+          <nav className="bottom-nav">
+            <button 
+              className={`nav-item ${activeTab === 'welcome' ? 'active' : ''}`}
+              onClick={() => setActiveTab('welcome')}
+            >
+              <span className="nav-icon">🏠</span>
+              <span className="nav-label">Home</span>
+            </button>
+            <button 
+              className={`nav-item ${activeTab === 'lobby' ? 'active' : ''}`}
+              onClick={() => setActiveTab('lobby')}
+            >
+              <span className="nav-icon">🎮</span>
+              <span className="nav-label">Game</span>
+            </button>
+            <button 
+              className={`nav-item ${activeTab === 'history' ? 'active' : ''}`}
+              onClick={() => setActiveTab('history')}
+            >
+              <span className="nav-icon">📊</span>
+              <span className="nav-label">History</span>
+            </button>
+            <button 
+              className={`nav-item ${activeTab === 'wallet' ? 'active' : ''}`}
+              onClick={() => setActiveTab('wallet')}
+            >
+              <span className="nav-icon">💰</span>
+              <span className="nav-label">Wallet</span>
+            </button>
+            <button 
+              className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
+              onClick={() => setActiveTab('profile')}
+            >
+              <span className="nav-icon">👤</span>
+              <span className="nav-label">Profile</span>
+            </button>
+            {(user.telegram_id.toString() === process.env.REACT_APP_ADMIN_ID || DEV_MODE) && (
+              <button 
+                className={`nav-item ${activeTab === 'admin' ? 'active' : ''}`}
+                onClick={() => setActiveTab('admin')}
+              >
+                <span className="nav-icon">⚙️</span>
+                <span className="nav-label">Admin</span>
+              </button>
+            )}
+          </nav>
         </>
       )}
       

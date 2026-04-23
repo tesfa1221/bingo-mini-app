@@ -129,7 +129,8 @@ function AdminPanel({ initData }) {
   };
 
   const handleStartGame = async (gameId) => {
-    if (!window.confirm('Start this game now?')) return;
+    // eslint-disable-next-line no-restricted-globals
+    if (!confirm('Start this game now?')) return;
     
     setLoading(true);
     try {
@@ -149,7 +150,8 @@ function AdminPanel({ initData }) {
   };
 
   const handleCancelGame = async (gameId) => {
-    if (!window.confirm('Cancel this game? All players will be refunded.')) return;
+    // eslint-disable-next-line no-restricted-globals
+    if (!confirm('Cancel this game? All players will be refunded.')) return;
     
     setLoading(true);
     try {
