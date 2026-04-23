@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || window.location.origin;
+const API_URL = 'https://bingo-mini-app-sily.onrender.com';
 
 function CardSelectionLobby({ gameId, user, socket, initData, onStartGame, onLeave }) {
   const [cards, setCards] = useState([]);

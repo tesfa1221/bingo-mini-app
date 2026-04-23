@@ -11,7 +11,7 @@ import CardSelectionLobby from './components/CardSelectionLobby';
 import BingoGame from './components/BingoGame';
 import AdminPanel from './components/AdminPanel';
 
-const API_URL = process.env.REACT_APP_API_URL || window.location.origin;
+const API_URL = 'https://bingo-mini-app-sily.onrender.com';
 const socket = io(API_URL);
 
 // Development mode - bypass Telegram auth for local testing
