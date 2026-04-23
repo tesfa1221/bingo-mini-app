@@ -44,11 +44,12 @@ DEPLOY.md               # Deployment instructions
 - Telegram WebApp integration
 
 ### ✅ Backend (Node.js + Express)
-- Already deployed on Render
+- Code optimized for API-only deployment
 - Real-time Socket.io communication
 - MySQL database (Aiven)
 - Authentication system
 - Admin panel functionality
+- **Status:** Requires Render configuration update (see BACKEND_DEPLOYMENT_GUIDE.md)
 
 ### ✅ Deployment Package
 - Production-ready files in `cpanel-vite-upload/`
