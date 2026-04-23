@@ -103,9 +103,14 @@ router.post('/join/:gameId', checkAuth, async (req, res) => {
         [game.bet_amount, user.id]
       );
       
+      // Calculate house commission
+      const houseCommission = game.house_commission || 10;
+      const commissionAmount = (game.bet_amount * houseCommission) / 100;
+      const prizeContribution = game.bet_amount - commissionAmount;
+      
       await connection.query(
-        'UPDATE games SET prize_pool = prize_pool + ? WHERE id = ?',
-        [game.bet_amount, gameId]
+        'UPDATE games SET prize_pool = prize_pool + ?, house_earnings = house_earnings + ? WHERE id = ?',
+        [prizeContribution, commissionAmount, gameId]
       );
       
       const bingoCard = generateBingoCard();
