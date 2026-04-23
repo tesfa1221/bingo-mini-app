@@ -14,6 +14,9 @@ function BingoGame({ gameId, user, socket, initData, onLeave }) {
   const [showPenaltyModal, setShowPenaltyModal] = useState(false);
   const [penaltyMessage, setPenaltyMessage] = useState('');
   const [isSpectator, setIsSpectator] = useState(false);
+  const [autoDaub, setAutoDaub] = useState(true);
+  const [showWinModal, setShowWinModal] = useState(false);
+  const [winData, setWinData] = useState(null);
 
   useEffect(() => {
     fetchGameData();
@@ -23,6 +26,11 @@ function BingoGame({ gameId, user, socket, initData, onLeave }) {
     socket.on('game_state', (data) => {
       setGame(data.game);
       setCalledNumbers(data.calledNumbers);
+      
+      // Auto-daub if enabled
+      if (autoDaub && ticket) {
+        autoMarkNumbers(data.calledNumbers);
+      }
       
       // Enable BINGO button if 5+ balls drawn
       if (data.calledNumbers.length >= 5) {
@@ -43,6 +51,11 @@ function BingoGame({ gameId, user, socket, initData, onLeave }) {
       setCalledNumbers(prev => {
         const updated = [...prev, data.number];
         
+        // Auto-daub the new number if enabled
+        if (autoDaub && ticket) {
+          autoMarkNumber(data.number);
+        }
+        
         // Enable BINGO button after 5 balls
         if (updated.length >= 5) {
           setBingoEnabled(true);
@@ -55,12 +68,13 @@ function BingoGame({ gameId, user, socket, initData, onLeave }) {
     });
     
     socket.on('game_won', (data) => {
-      const message = data.winners && data.winners.length > 1
-        ? `🎉 ${data.winners.length} winners! Each won ${data.prizePerWinner} ETB!`
-        : `🎉 ${data.winnerName} won ${data.prizeAmount} ETB!`;
+      setWinData(data);
+      setShowWinModal(true);
       
-      alert(message);
-      setTimeout(() => onLeave(), 2000);
+      setTimeout(() => {
+        setShowWinModal(false);
+        onLeave();
+      }, 5000);
     });
     
     socket.on('false_bingo_penalty', (data) => {
@@ -88,7 +102,7 @@ function BingoGame({ gameId, user, socket, initData, onLeave }) {
       socket.off('false_bingo_penalty');
       socket.off('bingo_error');
     };
-  }, [gameId, user.id, socket]);
+  }, [gameId, user.id, socket, autoDaub, ticket]);
 
   const fetchGameData = async () => {
     try {
@@ -121,8 +135,41 @@ function BingoGame({ gameId, user, socket, initData, onLeave }) {
     }
   };
 
+  const autoMarkNumbers = (numbers) => {
+    if (!ticket || !autoDaub) return;
+    
+    const newMarkedCells = [];
+    ticket.forEach((column, colIndex) => {
+      column.forEach((cell, rowIndex) => {
+        if (cell !== 'FREE' && numbers.includes(cell)) {
+          newMarkedCells.push(`${colIndex}-${rowIndex}`);
+        }
+      });
+    });
+    
+    setMarkedCells(newMarkedCells);
+  };
+
+  const autoMarkNumber = (number) => {
+    if (!ticket || !autoDaub) return;
+    
+    ticket.forEach((column, colIndex) => {
+      column.forEach((cell, rowIndex) => {
+        if (cell === number) {
+          const cellKey = `${colIndex}-${rowIndex}`;
+          setMarkedCells(prev => {
+            if (!prev.includes(cellKey)) {
+              return [...prev, cellKey];
+            }
+            return prev;
+          });
+        }
+      });
+    });
+  };
+
   const toggleCell = (col, row) => {
-    if (isSpectator) return; // Spectators can't mark cells
+    if (isSpectator || autoDaub) return; // Can't manually mark if auto-daub is on
     
     const cell = ticket[col][row];
     
@@ -189,59 +236,76 @@ function BingoGame({ gameId, user, socket, initData, onLeave }) {
   // Spectator view - show called numbers only
   if (isSpectator) {
     return (
-      <div className="bingo-game spectator-mode">
-        {/* Game Info Header */}
-        <div className="game-info-header">
-          <button className="btn btn-secondary back-btn" onClick={onLeave}>←</button>
-          <div className="game-details">
-            <div className="game-id">Game KEB{String(gameId).padStart(6, '0')}</div>
-            <div className="game-meta">
-              <span>👥 {game.current_players || 0}</span>
-              <span>💰 {game.bet_amount}</span>
-              <span>🏆 {game.prize_pool}</span>
-              <span>📞 {calledNumbers.length}/75</span>
-            </div>
-          </div>
-          <div className="spectator-badge">👁️ Spectator</div>
+      <div className="beteseb-game spectator-mode">
+        {/* Game Header - Beteseb Style */}
+        <div className="beteseb-header">
+          <button className="back-btn" onClick={onLeave}>← Back</button>
+          <button className="refresh-btn">⟲ Refresh</button>
         </div>
 
-        {lastBall && (
-          <div className="last-ball-display">
-            <div className="ball-animation">{lastBall}</div>
-            <div className="ball-label">Live Ball</div>
+        {/* Game Info Bar */}
+        <div className="game-info-bar">
+          <div className="info-item">
+            <div className="info-label">Game ID</div>
+            <div className="info-value">KEB{String(gameId).padStart(6, '0')}</div>
           </div>
-        )}
+          <div className="info-item">
+            <div className="info-label">Players</div>
+            <div className="info-value">{game?.current_players || 0}</div>
+          </div>
+          <div className="info-item">
+            <div className="info-label">Bet</div>
+            <div className="info-value">{game?.bet_amount || 0}</div>
+          </div>
+          <div className="info-item">
+            <div className="info-label">Derash</div>
+            <div className="info-value">{game?.prize_pool || 0}</div>
+          </div>
+          <div className="info-item">
+            <div className="info-label">Called</div>
+            <div className="info-value">{calledNumbers.length}</div>
+          </div>
+        </div>
 
-        {/* 1-75 Number Grid */}
-        <div className="numbers-board">
-          <div className="board-header">
-            <div className="board-column">B<br/>1-15</div>
-            <div className="board-column">I<br/>16-30</div>
-            <div className="board-column">N<br/>31-45</div>
-            <div className="board-column">G<br/>46-60</div>
-            <div className="board-column">O<br/>61-75</div>
-          </div>
-          <div className="board-grid">
+        {/* Main Game Layout */}
+        <div className="beteseb-layout">
+          {/* Left Side - 1-75 Number Grid */}
+          <div className="numbers-grid-75">
             {Array.from({ length: 75 }, (_, i) => i + 1).map(num => (
               <div
                 key={num}
-                className={`board-number ${calledNumbers.includes(num) ? 'called' : ''}`}
+                className={`grid-number ${calledNumbers.includes(num) ? 'called' : ''}`}
               >
                 {num}
               </div>
             ))}
           </div>
-        </div>
 
-        <div className="spectator-message">
-          <h2>👁️ Spectator Mode</h2>
-          <p>You are watching this game</p>
-          <p>Join a game to play and win prizes!</p>
-        </div>
+          {/* Right Side - Spectator Area */}
+          <div className="game-area">
+            {/* Live Ball Display */}
+            {lastBall && (
+              <div className="live-ball-display">
+                <div className="ball-container">
+                  <div className="ball-letter">
+                    {lastBall <= 15 ? 'B' : lastBall <= 30 ? 'I' : lastBall <= 45 ? 'N' : lastBall <= 60 ? 'G' : 'O'}-{lastBall}
+                  </div>
+                  <div className="ball-animation">{lastBall}</div>
+                </div>
+              </div>
+            )}
 
-        <button className="btn btn-primary btn-large" onClick={onLeave}>
-          🎮 Join a Game
-        </button>
+            <div className="spectator-message">
+              <h2>👁️ Spectator Mode</h2>
+              <p>You are watching this game</p>
+              <p>Join a game to play and win prizes!</p>
+            </div>
+
+            <button className="btn btn-primary btn-large" onClick={onLeave}>
+              🎮 Join a Game
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -253,99 +317,190 @@ function BingoGame({ gameId, user, socket, initData, onLeave }) {
   const columns = ['B', 'I', 'N', 'G', 'O'];
 
   return (
-    <div className="bingo-game">
-      {/* Game Info Header */}
-      <div className="game-info-header">
-        <button className="btn btn-secondary back-btn" onClick={onLeave}>←</button>
-        <div className="game-details">
-          <div className="game-id">Game KEB{String(gameId).padStart(6, '0')}</div>
-          <div className="game-meta">
-            <span>👥 {game.current_players || 0}</span>
-            <span>💰 {game.bet_amount}</span>
-            <span>🏆 {game.prize_pool}</span>
-            <span>📞 {calledNumbers.length}/75</span>
-          </div>
-        </div>
-        <div className="timer-display">⏱️ {gameTimer}s</div>
+    <div className="beteseb-game">
+      {/* Game Header - Beteseb Style */}
+      <div className="beteseb-header">
+        <button className="back-btn" onClick={onLeave}>← Back</button>
+        <button className="refresh-btn">⟲ Refresh</button>
       </div>
 
-      {/* Live Ball Display */}
-      {lastBall && (
-        <div className="last-ball-display">
-          <div className="ball-animation">{lastBall}</div>
-          <div className="ball-label">Live Ball</div>
+      {/* Game Info Bar */}
+      <div className="game-info-bar">
+        <div className="info-item">
+          <div className="info-label">Main Wallet</div>
+          <div className="info-value">{Math.floor(user.main_wallet_balance)}</div>
         </div>
-      )}
+        <div className="info-item">
+          <div className="info-label">Play Wallet</div>
+          <div className="info-value">{Math.floor(user.play_wallet_balance)}</div>
+        </div>
+        <div className="info-item">
+          <div className="info-label">Stake</div>
+          <div className="info-value">{game?.bet_amount || 0}</div>
+        </div>
+        <div className="info-item timer">
+          <div className="info-value">{gameTimer} s</div>
+        </div>
+      </div>
 
-      {/* 1-75 Number Grid */}
-      <div className="numbers-board">
-        <div className="board-header">
-          <div className="board-column">B<br/>1-15</div>
-          <div className="board-column">I<br/>16-30</div>
-          <div className="board-column">N<br/>31-45</div>
-          <div className="board-column">G<br/>46-60</div>
-          <div className="board-column">O<br/>61-75</div>
-        </div>
-        <div className="board-grid">
+      {/* Main Game Layout */}
+      <div className="beteseb-layout">
+        {/* Left Side - 1-75 Number Grid */}
+        <div className="numbers-grid-75">
           {Array.from({ length: 75 }, (_, i) => i + 1).map(num => (
             <div
               key={num}
-              className={`board-number ${calledNumbers.includes(num) ? 'called' : ''}`}
+              className={`grid-number ${calledNumbers.includes(num) ? 'called' : ''}`}
             >
               {num}
             </div>
           ))}
         </div>
-      </div>
 
-      {/* User's Bingo Card */}
-      <div className="bingo-card">
-        <div className="card-header">
-          {columns.map(letter => (
-            <div key={letter} className="column-header">{letter}</div>
-          ))}
-        </div>
-        <div className="card-grid">
-          {ticket.map((column, colIndex) => (
-            <div key={colIndex} className="card-column">
-              {column.map((cell, rowIndex) => {
-                const cellKey = `${colIndex}-${rowIndex}`;
-                const isMarked = markedCells.includes(cellKey);
-                const isFree = cell === 'FREE';
-                const isCalled = calledNumbers.includes(cell);
-                
-                return (
-                  <div
-                    key={cellKey}
-                    className={`bingo-cell ${isMarked ? 'marked' : ''} ${isFree ? 'free' : ''} ${isCalled && !isMarked ? 'called' : ''}`}
-                    onClick={() => !isFree && toggleCell(colIndex, rowIndex)}
-                  >
-                    {cell}
-                    {isMarked && !isFree && <div className="mark-indicator">●</div>}
-                  </div>
-                );
-              })}
+        {/* Right Side - Game Area */}
+        <div className="game-area">
+          {/* Live Ball Display */}
+          {lastBall && (
+            <div className="live-ball-display">
+              <div className="ball-container">
+                <div className="ball-letter">
+                  {lastBall <= 15 ? 'B' : lastBall <= 30 ? 'I' : lastBall <= 45 ? 'N' : lastBall <= 60 ? 'G' : 'O'}-{lastBall}
+                </div>
+                <div className="ball-animation">{lastBall}</div>
+              </div>
             </div>
-          ))}
+          )}
+
+          {/* Auto-daub Toggle */}
+          <div className="auto-daub-control">
+            <span>Automatic</span>
+            <label className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={autoDaub}
+                onChange={(e) => setAutoDaub(e.target.checked)}
+              />
+              <span className="toggle-slider"></span>
+            </label>
+          </div>
+
+          {/* BINGO Letters Header */}
+          <div className="bingo-letters">
+            {columns.map((letter, index) => (
+              <div key={letter} className={`bingo-letter letter-${letter.toLowerCase()}`}>
+                {letter}
+              </div>
+            ))}
+          </div>
+
+          {/* User's Bingo Card */}
+          <div className="user-bingo-card">
+            {ticket && ticket.map((column, colIndex) => (
+              <div key={colIndex} className="card-column">
+                {column.map((cell, rowIndex) => {
+                  const cellKey = `${colIndex}-${rowIndex}`;
+                  const isMarked = markedCells.includes(cellKey);
+                  const isFree = cell === 'FREE';
+                  const isCalled = calledNumbers.includes(cell);
+                  
+                  return (
+                    <div
+                      key={cellKey}
+                      className={`bingo-cell ${isMarked ? 'marked' : ''} ${isFree ? 'free' : ''} ${isCalled && !isMarked ? 'called' : ''}`}
+                      onClick={() => !isFree && toggleCell(colIndex, rowIndex)}
+                    >
+                      {isFree ? '★' : cell}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+
+          {/* Card Number */}
+          <div className="card-number">
+            Cartela No: {Math.floor(Math.random() * 100) + 1}
+          </div>
         </div>
       </div>
 
-      {/* BINGO Button */}
-      <button 
-        className={`btn btn-bingo ${bingoEnabled ? 'enabled' : 'disabled'}`}
-        onClick={claimBingo}
-        disabled={!bingoEnabled}
-      >
-        {bingoEnabled ? '🎉 BINGO!' : `⏳ Wait (${5 - calledNumbers.length} more balls)`}
-      </button>
-
-      {/* Game Instructions */}
-      <div className="game-instructions">
-        <p>📌 Click numbers on your card to mark them (only called numbers)</p>
-        <p>🎯 Complete any pattern: Row, Column, Diagonal, or Four Corners</p>
-        <p>⚠️ False BINGO = Ejection + 30min ban!</p>
+      {/* Bottom Action Buttons */}
+      <div className="bottom-actions">
+        <button className="action-btn leave-btn" onClick={onLeave}>
+          Leave
+        </button>
+        <button className="action-btn refresh-btn">
+          ⟲ Refresh
+        </button>
+        <button 
+          className={`action-btn auto-btn ${autoDaub ? 'active' : ''}`}
+          onClick={() => setAutoDaub(!autoDaub)}
+        >
+          Automatic
+        </button>
       </div>
 
+      {/* Win Modal */}
+      {showWinModal && winData && (
+        <div className="win-modal">
+          <div className="win-content">
+            <div className="crown-icon">👑</div>
+            <h2 className="win-title">BINGO!</h2>
+            <div className="win-info">
+              🎉 {winData.winners?.length > 1 ? `${winData.winners.length} players won!` : 'You won!'}
+            </div>
+            
+            <div className="winner-badges">
+              {winData.winners?.slice(0, 2).map((winner, index) => (
+                <div key={index} className="winner-badge">
+                  <span className="winner-initial">{winner.username?.charAt(0) || 'W'}</span>
+                  <span className="winner-number">#{winner.cardId || (index + 1)}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="winning-card">
+              <div className="winning-card-title">🏆 Winning Cartela: {winData.cardId || Math.floor(Math.random() * 100)}</div>
+              
+              <div className="winning-bingo-letters">
+                {columns.map((letter, index) => (
+                  <div key={letter} className={`winning-letter letter-${letter.toLowerCase()}`}>
+                    {letter}
+                  </div>
+                ))}
+              </div>
+
+              {/* Show winning pattern on card */}
+              <div className="winning-bingo-card">
+                {ticket && ticket.map((column, colIndex) => (
+                  <div key={colIndex} className="winning-column">
+                    {column.map((cell, rowIndex) => {
+                      const cellKey = `${colIndex}-${rowIndex}`;
+                      const isMarked = markedCells.includes(cellKey);
+                      const isFree = cell === 'FREE';
+                      
+                      return (
+                        <div
+                          key={cellKey}
+                          className={`winning-cell ${isMarked ? 'marked' : ''} ${isFree ? 'free' : ''}`}
+                        >
+                          {isFree ? '★' : cell}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="auto-start-notice">
+              ● Auto-starting next game in 2s
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Penalty Modal */}
       {showPenaltyModal && (
         <div className="penalty-modal">
           <div className="modal-content penalty">

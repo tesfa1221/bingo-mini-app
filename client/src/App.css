@@ -2030,3 +2030,568 @@ input:checked + .toggle-slider:before {
     font-size: 9px;
   }
 }
+
+/* Beteseb-Style Game Interface */
+.beteseb-game {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  min-height: 100vh;
+  color: white;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.beteseb-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.back-btn, .refresh-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.back-btn:hover, .refresh-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.game-info-bar {
+  display: flex;
+  padding: 10px 20px;
+  background: rgba(0, 0, 0, 0.2);
+  gap: 15px;
+}
+
+.info-item {
+  background: rgba(139, 69, 19, 0.8);
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-align: center;
+  min-width: 60px;
+}
+
+.info-item.timer {
+  background: rgba(255, 165, 0, 0.8);
+  color: #000;
+  font-weight: bold;
+}
+
+.info-label {
+  font-size: 10px;
+  opacity: 0.8;
+  margin-bottom: 2px;
+}
+
+.info-value {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.beteseb-layout {
+  display: flex;
+  padding: 20px;
+  gap: 20px;
+  height: calc(100vh - 200px);
+}
+
+/* Left Side - 1-75 Number Grid */
+.numbers-grid-75 {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.grid-number {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(139, 69, 19, 0.6);
+  border: 1px solid rgba(139, 69, 19, 0.8);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  transition: all 0.3s;
+}
+
+.grid-number.called {
+  background: #ff6b35;
+  border-color: #ff6b35;
+  color: white;
+  box-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
+  animation: numberPulse 0.5s;
+}
+
+@keyframes numberPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* Right Side - Game Area */
+.game-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.live-ball-display {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.ball-container {
+  position: relative;
+  display: inline-block;
+}
+
+.ball-letter {
+  background: #4CAF50;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.ball-animation {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: bold;
+  color: #000;
+  animation: ballBounce 0.6s ease-out;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+}
+
+@keyframes ballBounce {
+  0% { transform: scale(0) rotate(0deg); }
+  50% { transform: scale(1.2) rotate(180deg); }
+  100% { transform: scale(1) rotate(360deg); }
+}
+
+.auto-daub-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 10px;
+  border-radius: 20px;
+  margin-bottom: 15px;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.2);
+  transition: 0.3s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+  background-color: #4CAF50;
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(26px);
+}
+
+/* BINGO Letters Header */
+.bingo-letters {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.bingo-letter {
+  text-align: center;
+  padding: 8px;
+  font-size: 18px;
+  font-weight: bold;
+  border-radius: 8px;
+}
+
+.bingo-letter.letter-b { background: #2196F3; }
+.bingo-letter.letter-i { background: #9C27B0; }
+.bingo-letter.letter-n { background: #FF9800; }
+.bingo-letter.letter-g { background: #4CAF50; }
+.bingo-letter.letter-o { background: #FF5722; }
+
+/* User's Bingo Card */
+.user-bingo-card {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  margin-bottom: 15px;
+}
+
+.card-column {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bingo-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.bingo-cell.free {
+  background: #4CAF50;
+  color: white;
+  font-size: 20px;
+  cursor: default;
+}
+
+.bingo-cell.marked {
+  background: #4CAF50;
+  border-color: #4CAF50;
+  color: white;
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+}
+
+.bingo-cell.called {
+  border-color: #FFD700;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+}
+
+.card-number {
+  text-align: center;
+  background: rgba(139, 69, 19, 0.8);
+  padding: 8px;
+  border-radius: 16px;
+  font-size: 14px;
+  color: white;
+}
+
+/* Bottom Action Buttons */
+.bottom-actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  padding: 15px 20px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  gap: 10px;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.leave-btn {
+  background: #ff4444;
+  color: white;
+}
+
+.refresh-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.auto-btn {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4CAF50;
+  border: 1px solid #4CAF50;
+}
+
+.auto-btn.active {
+  background: #4CAF50;
+  color: white;
+}
+
+/* Win Modal - Beteseb Style */
+.win-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.5s;
+}
+
+.win-content {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border-radius: 20px;
+  padding: 30px;
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  border: 2px solid #FFD700;
+  box-shadow: 0 0 50px rgba(255, 215, 0, 0.5);
+}
+
+.crown-icon {
+  font-size: 60px;
+  margin-bottom: 15px;
+  animation: crownBounce 1s infinite;
+}
+
+@keyframes crownBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.win-title {
+  font-size: 36px;
+  color: #FFD700;
+  font-weight: bold;
+  margin-bottom: 15px;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+}
+
+.win-info {
+  font-size: 18px;
+  color: white;
+  margin-bottom: 20px;
+}
+
+.winner-badges {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.winner-badge {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.winner-initial {
+  width: 30px;
+  height: 30px;
+  background: #4CAF50;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: white;
+}
+
+.winner-number {
+  color: white;
+  font-weight: bold;
+}
+
+.winning-card {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.winning-card-title {
+  color: #FFD700;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.winning-bingo-letters {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.winning-letter {
+  text-align: center;
+  padding: 6px;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 6px;
+}
+
+.winning-letter.letter-b { background: #2196F3; }
+.winning-letter.letter-i { background: #9C27B0; }
+.winning-letter.letter-n { background: #FF9800; }
+.winning-letter.letter-g { background: #4CAF50; }
+.winning-letter.letter-o { background: #FF5722; }
+
+.winning-bingo-card {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 3px;
+}
+
+.winning-column {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.winning-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+}
+
+.winning-cell.free {
+  background: #4CAF50;
+  color: white;
+}
+
+.winning-cell.marked {
+  background: #4CAF50;
+  border-color: #4CAF50;
+  color: white;
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+}
+
+.auto-start-notice {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin-top: 20px;
+}
+
+/* Responsive Design for Beteseb Layout */
+@media (max-width: 768px) {
+  .beteseb-layout {
+    flex-direction: column;
+    height: auto;
+    padding: 10px;
+  }
+  
+  .numbers-grid-75 {
+    grid-template-columns: repeat(10, 1fr);
+    max-height: 300px;
+    margin-bottom: 20px;
+  }
+  
+  .grid-number {
+    font-size: 12px;
+  }
+  
+  .game-info-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .info-item {
+    min-width: 50px;
+    padding: 6px 8px;
+  }
+  
+  .bingo-cell {
+    font-size: 14px;
+  }
+  
+  .ball-animation {
+    width: 60px;
+    height: 60px;
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .numbers-grid-75 {
+    grid-template-columns: repeat(8, 1fr);
+  }
+  
+  .grid-number {
+    font-size: 10px;
+  }
+  
+  .bingo-cell {
+    font-size: 12px;
+  }
+  
+  .game-info-bar {
+    padding: 8px 10px;
+  }
+  
+  .beteseb-layout {
+    padding: 8px;
+  }
+}
