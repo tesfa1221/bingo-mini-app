@@ -1,0 +1,26 @@
+{
+  "name": "kebrchacha-bingo-monorepo",
+  "version": "1.0.0",
+  "description": "Kebrchacha Bingo - Backend deployment configuration for Render",
+  "main": "server/index.js",
+  "scripts": {
+    "render-build": "cd server && npm install",
+    "start": "cd server && npm start",
+    "dev": "cd server && npm run dev"
+  },
+  "keywords": [
+    "bingo",
+    "game",
+    "backend",
+    "render"
+  ],
+  "author": "Kebrchacha",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tesfa1221/bingo-mini-app.git"
+  }
+}
