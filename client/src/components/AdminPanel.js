@@ -129,7 +129,7 @@ function AdminPanel({ initData }) {
   };
 
   const handleStartGame = async (gameId) => {
-    if (!confirm('Start this game now?')) return;
+    if (!window.confirm('Start this game now?')) return;
     
     setLoading(true);
     try {
@@ -149,7 +149,7 @@ function AdminPanel({ initData }) {
   };
 
   const handleCancelGame = async (gameId) => {
-    if (!confirm('Cancel this game? All players will be refunded.')) return;
+    if (!window.confirm('Cancel this game? All players will be refunded.')) return;
     
     setLoading(true);
     try {
