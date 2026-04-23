@@ -8,6 +8,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const walletRoutes = require('./routes/wallet');
 const gameRoutes = require('./routes/game');
+const cardSelectionRoutes = require('./routes/card-selection');
 const adminRoutes = require('./routes/admin');
 const adminGameRoutes = require('./routes/admin-game');
 const { initializeGameSocket } = require('./socket/gameSocket');
@@ -28,6 +29,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/api/auth', authRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/game', gameRoutes);
+app.use('/api', cardSelectionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin', adminGameRoutes);
 

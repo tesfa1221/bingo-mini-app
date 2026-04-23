@@ -4,6 +4,7 @@ import io from 'socket.io-client';
 import './App.css';
 import WalletTab from './components/WalletTab';
 import GameLobby from './components/GameLobby';
+import CardSelectionLobby from './components/CardSelectionLobby';
 import BingoGame from './components/BingoGame';
 import AdminPanel from './components/AdminPanel';
 
@@ -17,6 +18,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('lobby');
   const [currentGame, setCurrentGame] = useState(null);
+  const [gamePhase, setGamePhase] = useState('lobby'); // 'lobby', 'card-selection', 'game'
   const [initData, setInitData] = useState('');
 
   useEffect(() => {
@@ -104,11 +106,17 @@ function App() {
 
   const joinGame = (gameId) => {
     setCurrentGame(gameId);
+    setGamePhase('card-selection');
     setActiveTab('game');
+  };
+
+  const startGame = () => {
+    setGamePhase('game');
   };
 
   const leaveGame = () => {
     setCurrentGame(null);
+    setGamePhase('lobby');
     setActiveTab('lobby');
     refreshUser();
   };
@@ -158,13 +166,27 @@ function App() {
       </header>
 
       {activeTab === 'game' && currentGame ? (
-        <BingoGame 
-          gameId={currentGame} 
-          user={user} 
-          socket={socket}
-          initData={initData}
-          onLeave={leaveGame}
-        />
+        <>
+          {gamePhase === 'card-selection' && (
+            <CardSelectionLobby
+              gameId={currentGame}
+              user={user}
+              socket={socket}
+              initData={initData}
+              onStartGame={startGame}
+              onLeave={leaveGame}
+            />
+          )}
+          {gamePhase === 'game' && (
+            <BingoGame 
+              gameId={currentGame} 
+              user={user} 
+              socket={socket}
+              initData={initData}
+              onLeave={leaveGame}
+            />
+          )}
+        </>
       ) : (
         <>
           <nav className="tab-nav">

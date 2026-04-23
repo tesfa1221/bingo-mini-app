@@ -36,51 +36,80 @@ function generateBingoCard() {
 
 function validateBingo(gridData, markedCells, calledNumbers) {
   const calledSet = new Set(calledNumbers);
-  const marked = JSON.parse(markedCells || '[]');
+  const markedSet = new Set(JSON.parse(markedCells || '[]'));
   
-  // Check rows
+  // Helper function to check if a cell is valid (marked and called)
+  const isCellValid = (col, row) => {
+    const cell = gridData[col][row];
+    const cellKey = `${col}-${row}`;
+    
+    // FREE space is always valid
+    if (cell === 'FREE') return true;
+    
+    // Cell must be marked by user AND actually called
+    return markedSet.has(cellKey) && calledSet.has(cell);
+  };
+  
+  // 1. Check Horizontal (ወደጎን) - Any full row
   for (let row = 0; row < 5; row++) {
     let rowComplete = true;
     for (let col = 0; col < 5; col++) {
-      const cell = gridData[col][row];
-      if (cell !== 'FREE' && !calledSet.has(cell)) {
+      if (!isCellValid(col, row)) {
         rowComplete = false;
         break;
       }
     }
-    if (rowComplete) return true;
+    if (rowComplete) return { valid: true, pattern: 'horizontal', row };
   }
   
-  // Check columns
+  // 2. Check Vertical (ወደታች) - Any full column
   for (let col = 0; col < 5; col++) {
     let colComplete = true;
     for (let row = 0; row < 5; row++) {
-      const cell = gridData[col][row];
-      if (cell !== 'FREE' && !calledSet.has(cell)) {
+      if (!isCellValid(col, row)) {
         colComplete = false;
         break;
       }
     }
-    if (colComplete) return true;
+    if (colComplete) return { valid: true, pattern: 'vertical', col };
   }
   
-  // Check diagonals
-  let diagonal1 = true;
-  let diagonal2 = true;
+  // 3. Check Diagonals (አግዳሚ) - Both main diagonals
+  let diagonal1 = true; // Top-left to bottom-right
+  let diagonal2 = true; // Top-right to bottom-left
   
   for (let i = 0; i < 5; i++) {
-    const cell1 = gridData[i][i];
-    const cell2 = gridData[i][4 - i];
-    
-    if (cell1 !== 'FREE' && !calledSet.has(cell1)) {
+    if (!isCellValid(i, i)) {
       diagonal1 = false;
     }
-    if (cell2 !== 'FREE' && !calledSet.has(cell2)) {
+    if (!isCellValid(i, 4 - i)) {
       diagonal2 = false;
     }
   }
   
-  return diagonal1 || diagonal2;
+  if (diagonal1) return { valid: true, pattern: 'diagonal', type: 'main' };
+  if (diagonal2) return { valid: true, pattern: 'diagonal', type: 'anti' };
+  
+  // 4. Check Four Corners (አራቱን ማእዘናት)
+  const corners = [
+    [0, 0],     // Top-left
+    [4, 0],     // Top-right
+    [0, 4],     // Bottom-left
+    [4, 4]      // Bottom-right
+  ];
+  
+  let fourCornersComplete = true;
+  for (const [col, row] of corners) {
+    if (!isCellValid(col, row)) {
+      fourCornersComplete = false;
+      break;
+    }
+  }
+  
+  if (fourCornersComplete) return { valid: true, pattern: 'four_corners' };
+  
+  // No valid pattern found
+  return { valid: false };
 }
 
 module.exports = { generateBingoCard, validateBingo };
