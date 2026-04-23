@@ -86,6 +86,12 @@ Ready to win big? Join the most exciting Bingo game in Ethiopia!
       ],
       [
         { 
+          text: '✅ Register / Update Profile', 
+          callback_data: 'register' 
+        }
+      ],
+      [
+        { 
           text: '📝 How to Play', 
           callback_data: 'how_to_play' 
         },
@@ -135,6 +141,142 @@ bot.on('callback_query', async (query) => {
   bot.answerCallbackQuery(query.id);
   
   switch (data) {
+    case 'register':
+      const userId = query.from.id;
+      const username = query.from.username || query.from.first_name || 'Player';
+      
+      try {
+        const connection = await getDbConnection();
+        
+        // Check if user exists
+        const [existingUser] = await connection.query(
+          'SELECT * FROM users WHERE telegram_id = ?',
+          [userId]
+        );
+        
+        if (existingUser.length > 0) {
+          // Update existing user
+          await connection.query(
+            'UPDATE users SET username = ?, updated_at = CURRENT_TIMESTAMP WHERE telegram_id = ?',
+            [username, userId]
+          );
+          
+          const user = existingUser[0];
+          const registerText = `
+✅ *Profile Updated!*
+
+*Your Account:*
+👤 Username: ${username}
+🆔 Telegram ID: ${userId}
+💰 Main Wallet: ${parseFloat(user.main_wallet_balance).toFixed(2)} ETB
+🎮 Play Wallet: ${parseFloat(user.play_wallet_balance).toFixed(2)} ETB
+
+*Status:* ✅ Registered & Active
+
+You're all set! Click "Play Now" to start playing! 🎮
+`;
+          
+          const playKeyboard = {
+            inline_keyboard: [
+              [{ text: '🎮 Play Now', web_app: { url: WEBAPP_URL } }],
+              [{ text: '💰 Check Balance', callback_data: 'check_balance' }]
+            ]
+          };
+          
+          bot.sendMessage(chatId, registerText, {
+            parse_mode: 'Markdown',
+            reply_markup: playKeyboard
+          });
+        } else {
+          // Register new user
+          await connection.query(
+            'INSERT INTO users (telegram_id, username, main_wallet_balance, play_wallet_balance) VALUES (?, ?, 0.00, 0.00)',
+            [userId, username]
+          );
+          
+          const registerText = `
+🎉 *Registration Successful!*
+
+Welcome to Kebrchacha Bingo, ${username}! 🎊
+
+*Your Account:*
+👤 Username: ${username}
+🆔 Telegram ID: ${userId}
+💰 Main Wallet: 0.00 ETB
+🎮 Play Wallet: 0.00 ETB
+
+*Next Steps:*
+1️⃣ Deposit funds to your wallet
+2️⃣ Transfer to Play Wallet
+3️⃣ Join a game and win!
+
+*Ready to play?* Click the button below! 👇
+`;
+          
+          const playKeyboard = {
+            inline_keyboard: [
+              [{ text: '🎮 Play Now', web_app: { url: WEBAPP_URL } }],
+              [{ text: '💰 Deposit Guide', callback_data: 'deposit_guide' }]
+            ]
+          };
+          
+          bot.sendMessage(chatId, registerText, {
+            parse_mode: 'Markdown',
+            reply_markup: playKeyboard
+          });
+        }
+        
+        await connection.end();
+      } catch (error) {
+        console.error('Registration error:', error);
+        bot.sendMessage(chatId, '❌ Registration failed. Please try /start again.');
+      }
+      break;
+      
+    case 'check_balance':
+      const balanceUserId = query.from.id;
+      
+      try {
+        const connection = await getDbConnection();
+        const [users] = await connection.query(
+          'SELECT * FROM users WHERE telegram_id = ?',
+          [balanceUserId]
+        );
+        await connection.end();
+        
+        if (users.length > 0) {
+          const user = users[0];
+          const balanceText = `
+💰 *Your Wallet Balance*
+
+Main Wallet: ${parseFloat(user.main_wallet_balance).toFixed(2)} ETB
+Play Wallet: ${parseFloat(user.play_wallet_balance).toFixed(2)} ETB
+
+Total: ${(parseFloat(user.main_wallet_balance) + parseFloat(user.play_wallet_balance)).toFixed(2)} ETB
+
+*Ready to play?* 🎮
+`;
+          
+          const keyboard = {
+            inline_keyboard: [
+              [{ text: '🎮 Play Now', web_app: { url: WEBAPP_URL } }],
+              [{ text: '💰 Deposit', callback_data: 'deposit_guide' }]
+            ]
+          };
+          
+          bot.sendMessage(chatId, balanceText, {
+            parse_mode: 'Markdown',
+            reply_markup: keyboard
+          });
+        } else {
+          bot.sendMessage(chatId, '❌ User not found. Please send /start first.');
+        }
+      } catch (error) {
+        console.error('Balance check error:', error);
+        bot.sendMessage(chatId, '❌ Could not check balance. Try again later.');
+      }
+      break;
+      
     case 'how_to_play':
       const howToPlay = `
 🎮 *How to Play Kebrchacha Bingo*
