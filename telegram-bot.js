@@ -21,7 +21,107 @@ const getDbConnection = async () => {
   });
 };
 
-// Welcome message with buttons
+// Handle contact sharing
+bot.on('contact', async (msg) => {
+  const chatId = msg.chat.id;
+  const contact = msg.contact;
+  const userId = msg.from.id;
+  
+  console.log(`📱 Contact received from ${userId}`);
+  
+  // Verify it's the user's own contact
+  if (contact.user_id !== userId) {
+    bot.sendMessage(chatId, '❌ Please share YOUR OWN contact, not someone else\'s.');
+    return;
+  }
+  
+  const phoneNumber = contact.phone_number;
+  const firstName = contact.first_name || '';
+  const lastName = contact.last_name || '';
+  const username = msg.from.username || firstName || 'Player';
+  
+  try {
+    const connection = await getDbConnection();
+    
+    // Check if phone number already registered
+    const [existingPhone] = await connection.query(
+      'SELECT * FROM users WHERE phone_number = ? AND telegram_id != ?',
+      [phoneNumber, userId]
+    );
+    
+    if (existingPhone.length > 0) {
+      await connection.end();
+      bot.sendMessage(chatId, '❌ This phone number is already registered with another account.');
+      return;
+    }
+    
+    // Register user with phone number
+    await connection.query(`
+      INSERT INTO users (telegram_id, username, phone_number, first_name, last_name, main_wallet_balance, play_wallet_balance) 
+      VALUES (?, ?, ?, ?, ?, 0.00, 0.00)
+      ON DUPLICATE KEY UPDATE 
+      username = VALUES(username),
+      phone_number = VALUES(phone_number),
+      first_name = VALUES(first_name),
+      last_name = VALUES(last_name),
+      updated_at = CURRENT_TIMESTAMP
+    `, [userId, username, phoneNumber, firstName, lastName]);
+    
+    await connection.end();
+    
+    console.log(`✅ User ${username} registered with phone ${phoneNumber}`);
+    
+    // Success message
+    const successText = `
+🎉 *Registration Complete!*
+
+Welcome to Kebrchacha Bingo, ${firstName}! 🎊
+
+*Your Verified Account:*
+👤 Name: ${firstName} ${lastName}
+📱 Phone: ${phoneNumber}
+🆔 Telegram ID: ${userId}
+💰 Main Wallet: 0.00 ETB
+🎮 Play Wallet: 0.00 ETB
+
+✅ *Account Status:* Verified & Active
+
+*Next Steps:*
+1️⃣ Deposit funds to start playing
+2️⃣ Transfer to Play Wallet
+3️⃣ Join a game and win big!
+
+*Ready to play?* 🎮
+`;
+    
+    const playKeyboard = {
+      inline_keyboard: [
+        [{ text: '🎮 Play Now', web_app: { url: WEBAPP_URL } }],
+        [
+          { text: '💰 Deposit Guide', callback_data: 'deposit_guide' },
+          { text: '📝 How to Play', callback_data: 'how_to_play' }
+        ]
+      ],
+      remove_keyboard: true
+    };
+    
+    bot.sendMessage(chatId, successText, {
+      parse_mode: 'Markdown',
+      reply_markup: playKeyboard
+    });
+    
+    // Send haptic feedback if in Telegram
+    if (msg.from.is_bot === false) {
+      bot.sendMessage(chatId, '✨ Your account is now fully verified and ready!');
+    }
+    
+  } catch (error) {
+    console.error('Contact registration error:', error);
+    bot.sendMessage(chatId, '❌ Registration failed. Please try again or contact support.');
+  }
+});
+
+// Handle /start command
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
@@ -154,16 +254,13 @@ bot.on('callback_query', async (query) => {
           [userId]
         );
         
+        await connection.end();
+        
         if (existingUser.length > 0) {
-          // Update existing user
-          await connection.query(
-            'UPDATE users SET username = ?, updated_at = CURRENT_TIMESTAMP WHERE telegram_id = ?',
-            [username, userId]
-          );
-          
+          // User already registered, just show status
           const user = existingUser[0];
           const registerText = `
-✅ *Profile Updated!*
+✅ *You're Already Registered!*
 
 *Your Account:*
 👤 Username: ${username}
@@ -171,9 +268,9 @@ bot.on('callback_query', async (query) => {
 💰 Main Wallet: ${parseFloat(user.main_wallet_balance).toFixed(2)} ETB
 🎮 Play Wallet: ${parseFloat(user.play_wallet_balance).toFixed(2)} ETB
 
-*Status:* ✅ Registered & Active
+*Status:* ✅ Active & Verified
 
-You're all set! Click "Play Now" to start playing! 🎮
+Ready to play? Click below! 🎮
 `;
           
           const playKeyboard = {
@@ -188,45 +285,40 @@ You're all set! Click "Play Now" to start playing! 🎮
             reply_markup: playKeyboard
           });
         } else {
-          // Register new user
-          await connection.query(
-            'INSERT INTO users (telegram_id, username, main_wallet_balance, play_wallet_balance) VALUES (?, ?, 0.00, 0.00)',
-            [userId, username]
-          );
-          
-          const registerText = `
-🎉 *Registration Successful!*
+          // New user - request contact
+          const contactRequestText = `
+📱 *Complete Your Registration*
 
-Welcome to Kebrchacha Bingo, ${username}! 🎊
+To register for Kebrchacha Bingo, please share your contact information.
 
-*Your Account:*
-👤 Username: ${username}
-🆔 Telegram ID: ${userId}
-💰 Main Wallet: 0.00 ETB
-🎮 Play Wallet: 0.00 ETB
+*Why we need this:*
+✅ Verify your identity
+✅ Secure your account
+✅ Process withdrawals safely
+✅ Send important notifications
 
-*Next Steps:*
-1️⃣ Deposit funds to your wallet
-2️⃣ Transfer to Play Wallet
-3️⃣ Join a game and win!
+*Your privacy is protected!*
+We only use your phone number for account security.
 
-*Ready to play?* Click the button below! 👇
+👇 Click the button below to share your contact
 `;
           
-          const playKeyboard = {
-            inline_keyboard: [
-              [{ text: '🎮 Play Now', web_app: { url: WEBAPP_URL } }],
-              [{ text: '💰 Deposit Guide', callback_data: 'deposit_guide' }]
-            ]
+          const contactKeyboard = {
+            keyboard: [
+              [{ 
+                text: '📱 Share My Contact', 
+                request_contact: true 
+              }]
+            ],
+            resize_keyboard: true,
+            one_time_keyboard: true
           };
           
-          bot.sendMessage(chatId, registerText, {
+          bot.sendMessage(chatId, contactRequestText, {
             parse_mode: 'Markdown',
-            reply_markup: playKeyboard
+            reply_markup: contactKeyboard
           });
         }
-        
-        await connection.end();
       } catch (error) {
         console.error('Registration error:', error);
         bot.sendMessage(chatId, '❌ Registration failed. Please try /start again.');
