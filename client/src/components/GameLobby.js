@@ -46,6 +46,13 @@ function GameLobby({ user, initData, onJoinGame }) {
     }
   };
 
+  const handleWatchGame = (gameId) => {
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    }
+    onJoinGame(gameId);
+  };
+
   return (
     <div className="game-lobby">
       <h2>Available Games</h2>
@@ -85,6 +92,13 @@ function GameLobby({ user, initData, onJoinGame }) {
                 {user.play_wallet_balance < game.bet_amount 
                   ? 'Insufficient Balance' 
                   : 'Join Game'}
+              </button>
+              <button
+                className="btn btn-secondary btn-block"
+                onClick={() => handleWatchGame(game.id)}
+                style={{ marginTop: '10px' }}
+              >
+                👁️ Watch Game
               </button>
             </div>
           ))}

@@ -180,4 +180,35 @@ router.get('/:gameId/ticket', checkAuth, async (req, res) => {
   }
 });
 
+// Check if user is playing or spectating
+router.get('/:gameId/status', checkAuth, async (req, res) => {
+  try {
+    const { gameId } = req.params;
+    const telegramId = req.telegramUser.id;
+    
+    const [users] = await db.query(
+      'SELECT id FROM users WHERE telegram_id = ?',
+      [telegramId]
+    );
+    
+    if (users.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const [tickets] = await db.query(
+      'SELECT * FROM tickets WHERE game_id = ? AND user_id = ?',
+      [gameId, users[0].id]
+    );
+    
+    res.json({ 
+      isPlaying: tickets.length > 0,
+      isSpectator: tickets.length === 0,
+      ticket: tickets.length > 0 ? tickets[0] : null
+    });
+  } catch (error) {
+    console.error('Get game status error:', error);
+    res.status(500).json({ error: 'Failed to get game status' });
+  }
+});
+
 module.exports = router;

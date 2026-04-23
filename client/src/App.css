@@ -1030,3 +1030,49 @@ body {
     font-size: 10px;
   }
 }
+
+/* Spectator Mode */
+.spectator-mode {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.spectator-badge {
+  background: rgba(255, 255, 255, 0.1);
+  color: #39FF14;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  border: 1px solid rgba(57, 255, 20, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.spectator-message {
+  background: rgba(26, 26, 26, 0.8);
+  backdrop-filter: blur(10px);
+  padding: 40px 20px;
+  border-radius: 16px;
+  border: 2px solid rgba(57, 255, 20, 0.3);
+  text-align: center;
+  margin: 20px 0;
+}
+
+.spectator-message h2 {
+  color: #39FF14;
+  font-size: 28px;
+  margin-bottom: 15px;
+  text-shadow: 0 0 10px rgba(57, 255, 20, 0.5);
+}
+
+.spectator-message p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+  margin: 10px 0;
+}
+
+.btn-block {
+  width: 100%;
+  margin-top: 10px;
+}

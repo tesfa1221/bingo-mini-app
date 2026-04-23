@@ -10,8 +10,10 @@ function CardSelectionLobby({ gameId, user, socket, initData, onStartGame, onLea
   const [showPreview, setShowPreview] = useState(false);
   const [timer, setTimer] = useState(60);
   const [confirmed, setConfirmed] = useState(false);
+  const [isSpectator, setIsSpectator] = useState(false);
 
   useEffect(() => {
+    checkPlayerStatus();
     fetchCardStatus();
     
     socket.emit('join_card_lobby', { gameId, userId: user.id });
@@ -43,6 +45,24 @@ function CardSelectionLobby({ gameId, user, socket, initData, onStartGame, onLea
     };
   }, [gameId, user.id, socket]);
 
+  const checkPlayerStatus = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/game/${gameId}/status`, {
+        headers: { 'x-telegram-init-data': initData }
+      });
+      
+      setIsSpectator(response.data.isSpectator);
+      setConfirmed(response.data.isPlaying);
+      
+      if (response.data.isPlaying && response.data.ticket) {
+        // User already has a card selected
+        setSelectedCard(response.data.ticket.card_id);
+      }
+    } catch (error) {
+      console.error('Check player status error:', error);
+    }
+  };
+
   const fetchCardStatus = async () => {
     try {
       const response = await axios.get(`${API_URL}/api/game/${gameId}/cards`, {
@@ -55,7 +75,7 @@ function CardSelectionLobby({ gameId, user, socket, initData, onStartGame, onLea
   };
 
   const handleCardClick = async (cardId) => {
-    if (confirmed) return;
+    if (confirmed || isSpectator) return;
     
     const card = cards.find(c => c.card_id === cardId);
     if (card && card.status !== 'available') return;
@@ -145,9 +165,11 @@ function CardSelectionLobby({ gameId, user, socket, initData, onStartGame, onLea
       <div className="lobby-title">
         <h2>መጫወቻ ካርድ - Select Your Card</h2>
         <p className="subtitle">
-          {confirmed 
-            ? '✅ Card confirmed! Waiting for game to start...' 
-            : 'Choose a card from 1-100'}
+          {isSpectator 
+            ? '👁️ Spectator Mode - Watching players select cards...' 
+            : confirmed 
+              ? '✅ Card confirmed! Waiting for game to start...' 
+              : 'Choose a card from 1-100'}
         </p>
       </div>
 

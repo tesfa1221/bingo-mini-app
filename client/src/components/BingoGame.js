@@ -13,6 +13,7 @@ function BingoGame({ gameId, user, socket, initData, onLeave }) {
   const [gameTimer, setGameTimer] = useState(10);
   const [showPenaltyModal, setShowPenaltyModal] = useState(false);
   const [penaltyMessage, setPenaltyMessage] = useState('');
+  const [isSpectator, setIsSpectator] = useState(false);
 
   useEffect(() => {
     fetchGameData();
@@ -54,7 +55,7 @@ function BingoGame({ gameId, user, socket, initData, onLeave }) {
     });
     
     socket.on('game_won', (data) => {
-      const message = data.winners.length > 1
+      const message = data.winners && data.winners.length > 1
         ? `🎉 ${data.winners.length} winners! Each won ${data.prizePerWinner} ETB!`
         : `🎉 ${data.winnerName} won ${data.prizeAmount} ETB!`;
       
@@ -96,20 +97,33 @@ function BingoGame({ gameId, user, socket, initData, onLeave }) {
       });
       setGame(response.data.game);
       
-      const ticketResponse = await axios.get(`${API_URL}/api/game/${gameId}/ticket`, {
+      // Check if user is playing or spectating
+      const statusResponse = await axios.get(`${API_URL}/api/game/${gameId}/status`, {
         headers: { 'x-telegram-init-data': initData }
       });
-      setTicket(JSON.parse(ticketResponse.data.ticket.grid_data));
       
-      // Load existing marked cells
-      const existingMarked = JSON.parse(ticketResponse.data.ticket.marked_cells || '[]');
-      setMarkedCells(existingMarked);
+      setIsSpectator(statusResponse.data.isSpectator);
+      
+      if (statusResponse.data.isPlaying) {
+        const ticketResponse = await axios.get(`${API_URL}/api/game/${gameId}/ticket`, {
+          headers: { 'x-telegram-init-data': initData }
+        });
+        setTicket(JSON.parse(ticketResponse.data.ticket.grid_data));
+        
+        // Load existing marked cells
+        const existingMarked = JSON.parse(ticketResponse.data.ticket.marked_cells || '[]');
+        setMarkedCells(existingMarked);
+      }
     } catch (error) {
       console.error('Fetch game data error:', error);
+      // If no ticket found, user is spectator
+      setIsSpectator(true);
     }
   };
 
   const toggleCell = (col, row) => {
+    if (isSpectator) return; // Spectators can't mark cells
+    
     const cell = ticket[col][row];
     
     // Can't toggle FREE space
@@ -139,6 +153,11 @@ function BingoGame({ gameId, user, socket, initData, onLeave }) {
   };
 
   const claimBingo = async () => {
+    if (isSpectator) {
+      alert('👁️ Spectators cannot claim BINGO');
+      return;
+    }
+    
     if (!bingoEnabled) {
       alert('⏳ Wait for at least 5 balls to be drawn');
       return;
@@ -163,7 +182,52 @@ function BingoGame({ gameId, user, socket, initData, onLeave }) {
     }
   };
 
-  if (!game || !ticket) {
+  if (!game) {
+    return <div className="loading-screen"><div className="spinner"></div></div>;
+  }
+
+  // Spectator view - show called numbers only
+  if (isSpectator) {
+    return (
+      <div className="bingo-game spectator-mode">
+        <div className="game-header">
+          <button className="btn btn-secondary" onClick={onLeave}>← Leave</button>
+          <div className="game-stats">
+            <span className="prize-display">ደራሽ: {game.prize_pool} ETB</span>
+            <span className="spectator-badge">👁️ Spectator</span>
+          </div>
+        </div>
+
+        {lastBall && (
+          <div className="last-ball-display">
+            <div className="ball-animation">{lastBall}</div>
+            <div className="ball-label">Live Ball</div>
+          </div>
+        )}
+
+        <div className="spectator-message">
+          <h2>👁️ Spectator Mode</h2>
+          <p>You are watching this game</p>
+          <p>Join a game to play and win prizes!</p>
+        </div>
+
+        <div className="called-numbers-section">
+          <h4>Called Numbers ({calledNumbers.length}/75)</h4>
+          <div className="numbers-grid">
+            {calledNumbers.map((num, idx) => (
+              <span key={idx} className="called-number">{num}</span>
+            ))}
+          </div>
+        </div>
+
+        <button className="btn btn-primary btn-large" onClick={onLeave}>
+          🎮 Join a Game
+        </button>
+      </div>
+    );
+  }
+
+  if (!ticket) {
     return <div className="loading-screen"><div className="spinner"></div></div>;
   }
 
