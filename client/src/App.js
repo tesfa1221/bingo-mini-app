@@ -8,7 +8,7 @@ import GameLobby from './components/GameLobby';
 import GameHistory from './components/GameHistory';
 import UserProfile from './components/UserProfile';
 import CardSelectionLobby from './components/CardSelectionLobby';
-import BingoGame from './components/BingoGame';
+import BingoGame from './components/ModernBingoGame';
 import AdminPanel from './components/AdminPanel';
 
 const API_URL = 'https://bingo-mini-app-sily.onrender.com';
@@ -147,16 +147,9 @@ function App() {
   }
 
   return (
-    <div className="app">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
       {user.username === 'Anonymous' && !DEV_MODE && (
-        <div style={{
-          background: 'linear-gradient(135deg, #D4AF37, #FFD700)',
-          color: '#121212',
-          padding: '12px 20px',
-          textAlign: 'center',
-          fontWeight: '600',
-          borderBottom: '2px solid #D4AF37'
-        }}>
+        <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black p-3 text-center font-semibold border-b-2 border-yellow-600">
           ⚠️ Please start the bot first: Send /start to @Odabingobot to register
         </div>
       )}
@@ -187,7 +180,7 @@ function App() {
       ) : (
         <>
           {/* Main Content */}
-          <main className="app-content">
+          <main className="pb-20">
             {activeTab === 'welcome' && (
               <WelcomeScreen 
                 user={user} 
@@ -228,66 +221,71 @@ function App() {
           </main>
 
           {/* Bottom Navigation */}
-          <nav className="bottom-nav">
-            <button 
-              className={`nav-item ${activeTab === 'welcome' ? 'active' : ''}`}
-              onClick={() => setActiveTab('welcome')}
-            >
-              <span className="nav-icon">🏠</span>
-              <span className="nav-label">Home</span>
-            </button>
-            <button 
-              className={`nav-item ${activeTab === 'lobby' ? 'active' : ''}`}
-              onClick={() => setActiveTab('lobby')}
-            >
-              <span className="nav-icon">🎮</span>
-              <span className="nav-label">Game</span>
-            </button>
-            <button 
-              className={`nav-item ${activeTab === 'history' ? 'active' : ''}`}
-              onClick={() => setActiveTab('history')}
-            >
-              <span className="nav-icon">📊</span>
-              <span className="nav-label">History</span>
-            </button>
-            <button 
-              className={`nav-item ${activeTab === 'wallet' ? 'active' : ''}`}
-              onClick={() => setActiveTab('wallet')}
-            >
-              <span className="nav-icon">💰</span>
-              <span className="nav-label">Wallet</span>
-            </button>
-            <button 
-              className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
-              onClick={() => setActiveTab('profile')}
-            >
-              <span className="nav-icon">👤</span>
-              <span className="nav-label">Profile</span>
-            </button>
-            {(user.telegram_id.toString() === process.env.REACT_APP_ADMIN_ID || DEV_MODE) && (
+          <nav className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-md border-t border-white/10 z-50">
+            <div className="flex">
               <button 
-                className={`nav-item ${activeTab === 'admin' ? 'active' : ''}`}
-                onClick={() => setActiveTab('admin')}
+                className={`flex-1 flex flex-col items-center py-3 text-xs transition-colors ${
+                  activeTab === 'welcome' ? 'text-yellow-400' : 'text-white/60 hover:text-white'
+                }`}
+                onClick={() => setActiveTab('welcome')}
               >
-                <span className="nav-icon">⚙️</span>
-                <span className="nav-label">Admin</span>
+                <span className="text-lg mb-1">🏠</span>
+                <span>Home</span>
               </button>
-            )}
+              <button 
+                className={`flex-1 flex flex-col items-center py-3 text-xs transition-colors ${
+                  activeTab === 'lobby' ? 'text-yellow-400' : 'text-white/60 hover:text-white'
+                }`}
+                onClick={() => setActiveTab('lobby')}
+              >
+                <span className="text-lg mb-1">🎮</span>
+                <span>Game</span>
+              </button>
+              <button 
+                className={`flex-1 flex flex-col items-center py-3 text-xs transition-colors ${
+                  activeTab === 'history' ? 'text-yellow-400' : 'text-white/60 hover:text-white'
+                }`}
+                onClick={() => setActiveTab('history')}
+              >
+                <span className="text-lg mb-1">📊</span>
+                <span>History</span>
+              </button>
+              <button 
+                className={`flex-1 flex flex-col items-center py-3 text-xs transition-colors ${
+                  activeTab === 'wallet' ? 'text-yellow-400' : 'text-white/60 hover:text-white'
+                }`}
+                onClick={() => setActiveTab('wallet')}
+              >
+                <span className="text-lg mb-1">💰</span>
+                <span>Wallet</span>
+              </button>
+              <button 
+                className={`flex-1 flex flex-col items-center py-3 text-xs transition-colors ${
+                  activeTab === 'profile' ? 'text-yellow-400' : 'text-white/60 hover:text-white'
+                }`}
+                onClick={() => setActiveTab('profile')}
+              >
+                <span className="text-lg mb-1">👤</span>
+                <span>Profile</span>
+              </button>
+              {(user.telegram_id.toString() === process.env.REACT_APP_ADMIN_ID || DEV_MODE) && (
+                <button 
+                  className={`flex-1 flex flex-col items-center py-3 text-xs transition-colors ${
+                    activeTab === 'admin' ? 'text-yellow-400' : 'text-white/60 hover:text-white'
+                  }`}
+                  onClick={() => setActiveTab('admin')}
+                >
+                  <span className="text-lg mb-1">⚙️</span>
+                  <span>Admin</span>
+                </button>
+              )}
+            </div>
           </nav>
         </>
       )}
       
       {DEV_MODE && (
-        <div style={{ 
-          position: 'fixed', 
-          bottom: '10px', 
-          right: '10px', 
-          background: '#f59e0b', 
-          color: 'white', 
-          padding: '5px 10px', 
-          borderRadius: '5px', 
-          fontSize: '12px' 
-        }}>
+        <div className="fixed bottom-4 right-4 bg-orange-500 text-white px-3 py-1 rounded-lg text-xs font-medium z-50">
           DEV MODE
         </div>
       )}
