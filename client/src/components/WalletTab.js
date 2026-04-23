@@ -41,6 +41,46 @@ function WalletTab({ user, initData, onUpdate }) {
     }
   };
 
+  const compressImage = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          // Resize if too large
+          const maxDimension = 1200;
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = (height / width) * maxDimension;
+              width = maxDimension;
+            } else {
+              width = (width / height) * maxDimension;
+              height = maxDimension;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Convert to base64 with compression
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          resolve(compressedBase64);
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleDepositSubmit = async () => {
     if (!selectedFile || !depositAmount) {
       alert('Please enter amount and select screenshot');
@@ -54,62 +94,42 @@ function WalletTab({ user, initData, onUpdate }) {
 
     setUploading(true);
     try {
-      // Convert image to base64
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        try {
-          const base64Image = reader.result;
-          
-          // Compress if image is too large
-          let imageData = base64Image;
-          if (base64Image.length > 1000000) { // If larger than 1MB
-            console.log('Compressing large image...');
-            // For now, just use as is - can add compression later
-          }
-          
-          const response = await axios.post(
-            `${API_URL}/api/wallet/deposit`,
-            { 
-              amount: parseFloat(depositAmount), 
-              screenshotUrl: imageData 
-            },
-            { 
-              headers: { 'x-telegram-init-data': initData },
-              timeout: 30000 // 30 second timeout
-            }
-          );
-          
-          if (window.Telegram?.WebApp) {
-            window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-          }
-          
-          setDepositAmount('');
-          setSelectedFile(null);
-          setShowDeposit(false);
-          setUploading(false);
-          fetchTransactions();
-          alert('✅ Deposit request submitted! Wait for admin approval.');
-        } catch (error) {
-          console.error('Deposit error:', error);
-          setUploading(false);
-          if (error.code === 'ECONNABORTED') {
-            alert('Upload timeout. Please try with a smaller image.');
-          } else {
-            alert('Deposit failed: ' + (error.response?.data?.error || error.message || 'Unknown error'));
-          }
+      console.log('Compressing image...');
+      const compressedImage = await compressImage(selectedFile);
+      console.log('Image compressed, uploading...');
+      
+      const response = await axios.post(
+        `${API_URL}/api/wallet/deposit`,
+        { 
+          amount: parseFloat(depositAmount), 
+          screenshotUrl: compressedImage 
+        },
+        { 
+          headers: { 'x-telegram-init-data': initData },
+          timeout: 30000
         }
-      };
+      );
       
-      reader.onerror = () => {
-        setUploading(false);
-        alert('Failed to read image file');
-      };
+      if (window.Telegram?.WebApp) {
+        window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+      }
       
-      reader.readAsDataURL(selectedFile);
+      setDepositAmount('');
+      setSelectedFile(null);
+      setShowDeposit(false);
+      setUploading(false);
+      fetchTransactions();
+      alert('✅ Deposit request submitted! Wait for admin approval.');
     } catch (error) {
       console.error('Deposit error:', error);
-      alert('Deposit failed: ' + error.message);
       setUploading(false);
+      if (error.code === 'ECONNABORTED') {
+        alert('Upload timeout. Please try with a smaller image.');
+      } else if (error.response?.status === 413) {
+        alert('Image too large. Please use a smaller screenshot.');
+      } else {
+        alert('Deposit failed: ' + (error.response?.data?.error || error.message || 'Unknown error'));
+      }
     }
   };
 
