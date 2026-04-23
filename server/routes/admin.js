@@ -25,44 +25,68 @@ router.post('/transactions/:id/approve', checkAuth, checkAdmin, async (req, res)
     const { id } = req.params;
     const { adminNote } = req.body;
     
+    console.log('Approving transaction:', id);
+    
     const connection = await db.getConnection();
     
     try {
       await connection.beginTransaction();
       
       const [transactions] = await connection.query(
-        'SELECT * FROM transactions WHERE id = ? AND status = "pending" FOR UPDATE',
+        'SELECT * FROM transactions WHERE id = ? FOR UPDATE',
         [id]
       );
       
+      console.log('Transaction found:', transactions.length > 0);
+      
       if (transactions.length === 0) {
-        throw new Error('Transaction not found or already processed');
+        throw new Error('Transaction not found');
       }
       
       const transaction = transactions[0];
+      
+      console.log('Transaction status:', transaction.status);
+      
+      if (transaction.status !== 'pending') {
+        throw new Error(`Transaction already ${transaction.status}`);
+      }
+      
+      console.log('Updating user wallet:', transaction.user_id, transaction.amount);
       
       await connection.query(
         'UPDATE users SET main_wallet_balance = main_wallet_balance + ? WHERE id = ?',
         [transaction.amount, transaction.user_id]
       );
       
+      console.log('Updating transaction status');
+      
       await connection.query(
-        'UPDATE transactions SET status = "approved", admin_note = ? WHERE id = ?',
-        [adminNote || null, id]
+        'UPDATE transactions SET status = "approved", admin_note = ?, updated_at = NOW() WHERE id = ?',
+        [adminNote || 'Approved by admin', id]
       );
       
       await connection.commit();
       
-      res.json({ message: 'Transaction approved successfully' });
+      console.log('Transaction approved successfully');
+      
+      res.json({ 
+        message: 'Transaction approved successfully',
+        transactionId: id,
+        amount: transaction.amount
+      });
     } catch (error) {
       await connection.rollback();
+      console.error('Transaction error:', error);
       throw error;
     } finally {
       connection.release();
     }
   } catch (error) {
     console.error('Approve transaction error:', error);
-    res.status(500).json({ error: error.message || 'Failed to approve transaction' });
+    res.status(500).json({ 
+      error: error.message || 'Failed to approve transaction',
+      details: error.toString()
+    });
   }
 });
 
