@@ -68,11 +68,11 @@
     RewriteEngine On
     
     # Handle Angular and React Router
-    RewriteBase /
+    RewriteBase /kbingo/
     RewriteRule ^index\.html$ - [L]
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule . /index.html [L]
+    RewriteRule . /kbingo/index.html [L]
 </IfModule>
 
 # MIME Types
