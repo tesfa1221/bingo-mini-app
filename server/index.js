@@ -23,7 +23,10 @@ const io = socketIo(server, {
     origin: [
       'http://localhost:3000',
       'http://localhost:5173',
-      'https://yourdomain.com',
+      'https://negattech.com',
+      'https://web.telegram.org',
+      'https://telegram.org',
+      'https://t.me',
       '*'
     ],
     methods: ['GET', 'POST'],
@@ -36,14 +39,28 @@ app.use(cors({
   origin: [
     'http://localhost:3000',
     'http://localhost:5173', 
-    'https://yourdomain.com',
+    'https://negattech.com',
+    'https://web.telegram.org',
+    'https://telegram.org',
+    'https://t.me',
     '*'
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-telegram-init-data']
 }));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Handle preflight requests
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-telegram-init-data');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(200);
+});
 
 // API Routes
 app.use('/api/auth', authRoutes);
