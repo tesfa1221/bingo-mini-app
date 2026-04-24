@@ -3,7 +3,7 @@ const axios = require('axios');
 const router = express.Router();
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const WEBAPP_URL = 'https://negattech.com/kbingo/test.html';
+const WEBAPP_URL = 'https://negattech.com/kbingo/';
 
 // Telegram Bot API helper function
 async function sendMessage(chatId, text, options = {}) {
@@ -50,11 +50,7 @@ router.post('/webhook', async (req, res) => {
               inline_keyboard: [
                 [{
                   text: '🎮 Play Bingo Now',
-                  web_app: { url: 'https://negattech.com/kbingo/' }
-                }],
-                [{
-                  text: '🌐 Open in Browser',
-                  url: 'https://negattech.com/kbingo/'
+                  web_app: { url: WEBAPP_URL }
                 }]
               ]
             }
