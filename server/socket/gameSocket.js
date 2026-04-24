@@ -31,23 +31,18 @@ function initializeGameSocket(io) {
     // Join game room
     socket.on('join_game', async ({ gameId, userId }) => {
       try {
-        const gameEngine = io.gameEngine;
-        if (gameEngine) {
-          await gameEngine.handlePlayerJoin(gameId, userId, socket);
-        } else {
-          // Fallback if game engine not ready
-          socket.join(`game_${gameId}`);
-          
-          // Get current game state
-          const [games] = await db.query('SELECT * FROM games WHERE id = ?', [gameId]);
-          if (games.length > 0) {
-            const game = games[0];
-            socket.emit('game_state', {
-              gameId,
-              status: game.status,
-              calledNumbers: JSON.parse(game.called_numbers || '[]')
-            });
-          }
+        // Simple fallback - just join room and send game state
+        socket.join(`game_${gameId}`);
+        
+        // Get current game state
+        const [games] = await db.query('SELECT * FROM games WHERE id = ?', [gameId]);
+        if (games.length > 0) {
+          const game = games[0];
+          socket.emit('game_state', {
+            gameId,
+            status: game.status,
+            calledNumbers: JSON.parse(game.called_numbers || '[]')
+          });
         }
       } catch (error) {
         console.error('Join game error:', error);
@@ -56,24 +51,14 @@ function initializeGameSocket(io) {
     
     // Leave game room
     socket.on('leave_game', ({ gameId, userId }) => {
-      const gameEngine = io.gameEngine;
-      if (gameEngine) {
-        gameEngine.handlePlayerLeave(gameId, userId, socket);
-      } else {
-        socket.leave(`game_${gameId}`);
-      }
+      socket.leave(`game_${gameId}`);
     });
     
     // Claim bingo
     socket.on('claim_bingo', async ({ gameId, userId, cards }) => {
       try {
-        const gameEngine = io.gameEngine;
-        if (gameEngine) {
-          await gameEngine.handleBingoClaim(gameId, userId, cards);
-        } else {
-          // Fallback bingo handling
-          await handleBingoClaimFallback(socket, gameId, userId, cards, io);
-        }
+        // Simple bingo handling
+        await handleBingoClaimFallback(socket, gameId, userId, cards, io);
       } catch (error) {
         console.error('Claim bingo error:', error);
         socket.emit('bingo_error', { message: 'Failed to process BINGO claim' });
