@@ -6,16 +6,15 @@ const crypto = require('crypto');
 
 router.post('/deposit', checkAuth, async (req, res) => {
   try {
-    const { amount, screenshotUrl } = req.body;
+    const { amount, screenshotUrl, payment_method, transaction_ref } = req.body;
     const telegramId = req.telegramUser.id;
     
     if (!amount || amount <= 0) {
       return res.status(400).json({ error: 'Invalid amount' });
     }
-    
-    if (!screenshotUrl) {
-      return res.status(400).json({ error: 'Screenshot required' });
-    }
+
+    // Accept either screenshotUrl or transaction_ref as the reference
+    const reference = screenshotUrl || transaction_ref || 'manual-deposit';
     
     const [users] = await db.query(
       'SELECT id FROM users WHERE telegram_id = ?',
@@ -30,7 +29,7 @@ router.post('/deposit', checkAuth, async (req, res) => {
     
     await db.query(
       'INSERT INTO transactions (user_id, amount, type, status, screenshot_url, transaction_ref) VALUES (?, ?, ?, ?, ?, ?)',
-      [users[0].id, amount, 'deposit', 'pending', screenshotUrl, transactionRef]
+      [users[0].id, amount, 'deposit', 'pending', reference, transactionRef]
     );
     
     res.json({ 
