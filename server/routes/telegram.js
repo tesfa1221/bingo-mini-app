@@ -3,7 +3,7 @@ const axios = require('axios');
 const router = express.Router();
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const WEBAPP_URL = 'https://negattech.com/kbingo/?v=2';
+const WEBAPP_URL = 'https://negattech.com/kbingo/';
 
 // Telegram Bot API helper function
 async function sendMessage(chatId, text, options = {}) {
@@ -40,25 +40,21 @@ router.post('/webhook', async (req, res) => {
       if (text === '/start') {
         await sendMessage(chatId, 
           `🎮 <b>Welcome to Kebrchacha Bingo!</b>\n\n` +
-          `🎯 Real-time multiplayer bingo game\n` +
-          `💰 Instant payouts and rewards\n` +
-          `📱 Optimized for mobile play\n\n` +
-          `🚀 <b>Play Now:</b> https://negattech.com/kbingo/app/\n\n` +
-          `Choose your preferred way to play:`,
+          `Hello ${user.first_name}! Ready to play?\n\n` +
+          `🎯 Real-time multiplayer bingo\n` +
+          `💰 Instant payouts\n` +
+          `🔒 Secure & fair gameplay\n\n` +
+          `Tap the button below to start playing!`,
           {
             reply_markup: {
               inline_keyboard: [
                 [{
-                  text: '🎮 WebApp (Redirect)',
-                  web_app: { url: 'https://negattech.com/kbingo/redirect.html' }
+                  text: '🎮 Play Bingo Now',
+                  web_app: { url: 'https://negattech.com/kbingo/' }
                 }],
                 [{
                   text: '🌐 Open in Browser',
-                  url: 'https://negattech.com/kbingo/app/'
-                }],
-                [{
-                  text: '🎯 Direct Link',
-                  url: 'https://negattech.com/kbingo/app/'
+                  url: 'https://negattech.com/kbingo/'
                 }]
               ]
             }
@@ -97,21 +93,13 @@ router.post('/webhook', async (req, res) => {
       // Handle /play command
       else if (text === '/play') {
         await sendMessage(chatId,
-          `🚀 <b>Quick Play!</b>\n\n` +
-          `🎮 Game URL: https://negattech.com/kbingo/app/\n\n` +
-          `Choose how to open:`,
+          `🚀 <b>Let's Play!</b>\n\nTap the button to open the game:`,
           {
             reply_markup: {
-              inline_keyboard: [
-                [{
-                  text: '🌐 Open in Browser',
-                  url: 'https://negattech.com/kbingo/app/'
-                }],
-                [{
-                  text: '🎮 WebApp (Redirect)',
-                  web_app: { url: 'https://negattech.com/kbingo/redirect.html' }
-                }]
-              ]
+              inline_keyboard: [[{
+                text: '🎮 Play Bingo',
+                web_app: { url: 'https://negattech.com/kbingo/' }
+              }]]
             }
           }
         );
@@ -153,24 +141,15 @@ router.post('/webhook', async (req, res) => {
         );
       }
       
-      // Handle regular text messages
       else {
         await sendMessage(chatId,
-          `👋 Hello! I'm the Kebrchacha Bingo bot.\n\n` +
-          `🎮 <b>Play Now:</b> https://negattech.com/kbingo/app/\n\n` +
-          `Send /start for more options!`,
+          `👋 Hello ${user.first_name}! I'm the Kebrchacha Bingo bot.\n\nTap below to play!`,
           {
             reply_markup: {
-              inline_keyboard: [
-                [{
-                  text: '🌐 Open Game in Browser',
-                  url: 'https://negattech.com/kbingo/app/'
-                }],
-                [{
-                  text: '🎮 Try WebApp',
-                  web_app: { url: 'https://negattech.com/kbingo/redirect.html' }
-                }]
-              ]
+              inline_keyboard: [[{
+                text: '🎮 Play Bingo',
+                web_app: { url: 'https://negattech.com/kbingo/' }
+              }]]
             }
           }
         );
