@@ -94,7 +94,7 @@ router.post('/webhook', async (req, res) => {
             reply_markup: {
               inline_keyboard: [[{
                 text: '🎮 Play Bingo',
-                web_app: { url: 'https://negattech.com/kbingo/' }
+                web_app: { url: WEBAPP_URL }
               }]]
             }
           }
@@ -144,7 +144,7 @@ router.post('/webhook', async (req, res) => {
             reply_markup: {
               inline_keyboard: [[{
                 text: '🎮 Play Bingo',
-                web_app: { url: 'https://negattech.com/kbingo/' }
+                web_app: { url: WEBAPP_URL }
               }]]
             }
           }

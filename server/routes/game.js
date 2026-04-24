@@ -2,302 +2,321 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
 const { checkAuth } = require('../middleware/auth');
-const { generateBingoCard } = require('../utils/bingoGenerator');
 
-router.get('/available', checkAuth, async (req, res) => {
+// Get active games
+router.get('/active', async (req, res) => {
   try {
-    const [games] = await db.query(
-      `SELECT g.*, 
-        (SELECT COUNT(*) FROM tickets WHERE game_id = g.id) as current_players
-       FROM games g 
-       WHERE g.status = 'waiting' 
-       ORDER BY g.created_at DESC`
-    );
+    const [games] = await db.query(`
+      SELECT g.*, COUNT(t.id) as player_count, SUM(t.entry_fee) as prize_pool
+      FROM games g
+      LEFT JOIN tickets t ON g.id = t.game_id
+      WHERE g.status IN ('waiting', 'starting', 'playing')
+      GROUP BY g.id
+      ORDER BY g.created_at DESC
+    `);
     
     res.json({ games });
   } catch (error) {
-    console.error('Get available games error:', error);
-    res.status(500).json({ error: 'Failed to get games' });
+    console.error('Get active games error:', error);
+    res.status(500).json({ error: 'Failed to get active games' });
   }
 });
 
+// Create new game
 router.post('/create', checkAuth, async (req, res) => {
   try {
-    const { betAmount, maxPlayers } = req.body;
+    const { entryFee } = req.body;
+    const userId = req.telegramUser.id;
     
-    if (!betAmount || betAmount <= 0) {
-      return res.status(400).json({ error: 'Invalid bet amount' });
+    if (!entryFee || entryFee <= 0) {
+      return res.status(400).json({ error: 'Invalid entry fee' });
     }
     
-    const [result] = await db.query(
-      'INSERT INTO games (bet_amount, max_players, called_numbers) VALUES (?, ?, ?)',
-      [betAmount, maxPlayers || 10, JSON.stringify([])]
-    );
+    // Check user balance
+    const [users] = await db.query('SELECT * FROM users WHERE telegram_id = ?', [userId]);
+    if (users.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
     
-    res.json({ 
-      message: 'Game created successfully',
-      gameId: result.insertId 
-    });
-  } catch (error) {
-    console.error('Create game error:', error);
-    res.status(500).json({ error: 'Failed to create game' });
-  }
-});
-
-router.post('/join/:gameId', checkAuth, async (req, res) => {
-  try {
-    const { gameId } = req.params;
-    const telegramId = req.telegramUser.id;
+    const user = users[0];
+    if (user.play_wallet_balance < entryFee) {
+      return res.status(400).json({ error: 'Insufficient balance' });
+    }
     
     const connection = await db.getConnection();
     
     try {
       await connection.beginTransaction();
       
-      const [users] = await connection.query(
-        'SELECT * FROM users WHERE telegram_id = ? FOR UPDATE',
-        [telegramId]
-      );
+      // Create game
+      const [gameResult] = await connection.query(`
+        INSERT INTO games (entry_fee, max_players, status, created_by, start_time)
+        VALUES (?, 10, 'waiting', ?, DATE_ADD(NOW(), INTERVAL 60 SECOND))
+      `, [entryFee, user.id]);
       
-      if (users.length === 0) {
-        throw new Error('User not found');
-      }
+      const gameId = gameResult.insertId;
       
-      const user = users[0];
-      
-      const [games] = await connection.query(
-        'SELECT * FROM games WHERE id = ? AND status = ? FOR UPDATE',
-        [gameId, 'waiting']
-      );
-      
-      if (games.length === 0) {
-        throw new Error('Game not available');
-      }
-      
-      const game = games[0];
-      
-      const [existingTicket] = await connection.query(
-        'SELECT id FROM tickets WHERE game_id = ? AND user_id = ?',
-        [gameId, user.id]
-      );
-      
-      if (existingTicket.length > 0) {
-        throw new Error('Already joined this game');
-      }
-      
-      if (user.play_wallet_balance < game.bet_amount) {
-        throw new Error('Insufficient play wallet balance');
-      }
-      
-      const [ticketCount] = await connection.query(
-        'SELECT COUNT(*) as count FROM tickets WHERE game_id = ?',
-        [gameId]
-      );
-      
-      if (ticketCount[0].count >= game.max_players) {
-        throw new Error('Game is full');
-      }
-      
+      // Deduct entry fee
       await connection.query(
         'UPDATE users SET play_wallet_balance = play_wallet_balance - ? WHERE id = ?',
-        [game.bet_amount, user.id]
+        [entryFee, user.id]
       );
       
-      // Calculate house commission
-      const houseCommission = game.house_commission || 10;
-      const commissionAmount = (game.bet_amount * houseCommission) / 100;
-      const prizeContribution = game.bet_amount - commissionAmount;
-      
-      await connection.query(
-        'UPDATE games SET prize_pool = prize_pool + ?, house_earnings = house_earnings + ? WHERE id = ?',
-        [prizeContribution, commissionAmount, gameId]
-      );
-      
-      const bingoCard = generateBingoCard();
-      
-      await connection.query(
-        'INSERT INTO tickets (game_id, user_id, grid_data, marked_cells) VALUES (?, ?, ?, ?)',
-        [gameId, user.id, JSON.stringify(bingoCard), JSON.stringify([])]
-      );
+      // Create ticket for creator
+      const cardNumbers = generateBingoCard();
+      await connection.query(`
+        INSERT INTO tickets (game_id, user_id, entry_fee, card_numbers, status)
+        VALUES (?, ?, ?, ?, 'active')
+      `, [gameId, user.id, entryFee, JSON.stringify(cardNumbers)]);
       
       await connection.commit();
       
-      res.json({ 
-        message: 'Joined game successfully',
-        ticket: bingoCard
+      // Get updated user
+      const [updatedUser] = await db.query('SELECT * FROM users WHERE id = ?', [user.id]);
+      
+      res.json({
+        game: { id: gameId, entry_fee: entryFee, status: 'waiting', player_count: 1 },
+        cards: [{ numbers: cardNumbers, marked: [12] }], // Mark FREE space
+        user: updatedUser[0]
       });
+      
     } catch (error) {
       await connection.rollback();
       throw error;
     } finally {
       connection.release();
     }
+    
   } catch (error) {
-    console.error('Join game error:', error);
-    res.status(500).json({ error: error.message || 'Failed to join game' });
+    console.error('Create game error:', error);
+    res.status(500).json({ error: 'Failed to create game' });
   }
 });
 
-router.get('/:gameId', checkAuth, async (req, res) => {
+// Join existing game
+router.post('/join', checkAuth, async (req, res) => {
+  try {
+    const { gameId } = req.body;
+    const userId = req.telegramUser.id;
+    
+    // Get game details
+    const [games] = await db.query('SELECT * FROM games WHERE id = ? AND status IN ("waiting", "starting")', [gameId]);
+    if (games.length === 0) {
+      return res.status(404).json({ error: 'Game not found or already started' });
+    }
+    
+    const game = games[0];
+    
+    // Check if user already joined
+    const [existingTickets] = await db.query(
+      'SELECT * FROM tickets WHERE game_id = ? AND user_id = (SELECT id FROM users WHERE telegram_id = ?)',
+      [gameId, userId]
+    );
+    
+    if (existingTickets.length > 0) {
+      return res.status(400).json({ error: 'Already joined this game' });
+    }
+    
+    // Check user balance
+    const [users] = await db.query('SELECT * FROM users WHERE telegram_id = ?', [userId]);
+    if (users.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = users[0];
+    if (user.play_wallet_balance < game.entry_fee) {
+      return res.status(400).json({ error: 'Insufficient balance' });
+    }
+    
+    const connection = await db.getConnection();
+    
+    try {
+      await connection.beginTransaction();
+      
+      // Deduct entry fee
+      await connection.query(
+        'UPDATE users SET play_wallet_balance = play_wallet_balance - ? WHERE id = ?',
+        [game.entry_fee, user.id]
+      );
+      
+      // Create ticket
+      const cardNumbers = generateBingoCard();
+      await connection.query(`
+        INSERT INTO tickets (game_id, user_id, entry_fee, card_numbers, status)
+        VALUES (?, ?, ?, ?, 'active')
+      `, [gameId, user.id, game.entry_fee, JSON.stringify(cardNumbers)]);
+      
+      await connection.commit();
+      
+      // Get updated user
+      const [updatedUser] = await db.query('SELECT * FROM users WHERE id = ?', [user.id]);
+      
+      res.json({
+        game: { id: gameId, entry_fee: game.entry_fee, status: game.status },
+        cards: [{ numbers: cardNumbers, marked: [12] }], // Mark FREE space
+        user: updatedUser[0]
+      });
+      
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+    
+  } catch (error) {
+    console.error('Join game error:', error);
+    res.status(500).json({ error: 'Failed to join game' });
+  }
+});
+
+// Get game details
+router.get('/:gameId', async (req, res) => {
   try {
     const { gameId } = req.params;
     
-    const [games] = await db.query('SELECT * FROM games WHERE id = ?', [gameId]);
+    const [games] = await db.query(`
+      SELECT g.*, COUNT(t.id) as player_count, SUM(t.entry_fee) as prize_pool
+      FROM games g
+      LEFT JOIN tickets t ON g.id = t.game_id
+      WHERE g.id = ?
+      GROUP BY g.id
+    `, [gameId]);
     
     if (games.length === 0) {
       return res.status(404).json({ error: 'Game not found' });
     }
     
-    res.json({ game: games[0] });
+    // Get players
+    const [players] = await db.query(`
+      SELECT u.username, u.full_name, t.status
+      FROM tickets t
+      JOIN users u ON t.user_id = u.id
+      WHERE t.game_id = ?
+    `, [gameId]);
+    
+    const game = games[0];
+    game.players = players.map(p => ({
+      username: p.username || p.full_name || 'Player',
+      status: p.status
+    }));
+    
+    res.json({ game });
   } catch (error) {
     console.error('Get game error:', error);
-    res.status(500).json({ error: 'Failed to get game' });
+    res.status(500).json({ error: 'Failed to get game details' });
   }
 });
 
+// Get user's ticket for a game
 router.get('/:gameId/ticket', checkAuth, async (req, res) => {
   try {
     const { gameId } = req.params;
-    const telegramId = req.telegramUser.id;
+    const userId = req.telegramUser.id;
     
-    const [users] = await db.query(
-      'SELECT id FROM users WHERE telegram_id = ?',
-      [telegramId]
-    );
-    
-    if (users.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    const [tickets] = await db.query(
-      'SELECT * FROM tickets WHERE game_id = ? AND user_id = ?',
-      [gameId, users[0].id]
-    );
+    const [tickets] = await db.query(`
+      SELECT t.*, u.id as user_db_id
+      FROM tickets t
+      JOIN users u ON t.user_id = u.id
+      WHERE t.game_id = ? AND u.telegram_id = ?
+    `, [gameId, userId]);
     
     if (tickets.length === 0) {
       return res.status(404).json({ error: 'Ticket not found' });
     }
     
-    res.json({ ticket: tickets[0] });
+    const ticket = tickets[0];
+    const cardNumbers = JSON.parse(ticket.card_numbers || '[]');
+    
+    res.json({
+      ticket: {
+        id: ticket.id,
+        numbers: cardNumbers,
+        marked: [12], // FREE space always marked
+        status: ticket.status
+      }
+    });
   } catch (error) {
     console.error('Get ticket error:', error);
     res.status(500).json({ error: 'Failed to get ticket' });
   }
 });
 
-// Check if user is playing or spectating
-router.get('/:gameId/status', checkAuth, async (req, res) => {
+// Claim bingo
+router.post('/:gameId/bingo', checkAuth, async (req, res) => {
   try {
     const { gameId } = req.params;
-    const telegramId = req.telegramUser.id;
+    const { cards } = req.body;
+    const userId = req.telegramUser.id;
     
-    const [users] = await db.query(
-      'SELECT id FROM users WHERE telegram_id = ?',
-      [telegramId]
-    );
+    // Verify user has ticket
+    const [tickets] = await db.query(`
+      SELECT t.*, u.id as user_db_id
+      FROM tickets t
+      JOIN users u ON t.user_id = u.id
+      WHERE t.game_id = ? AND u.telegram_id = ?
+    `, [gameId, userId]);
     
-    if (users.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
+    if (tickets.length === 0) {
+      return res.status(404).json({ error: 'Ticket not found' });
     }
     
-    const [tickets] = await db.query(
-      'SELECT * FROM tickets WHERE game_id = ? AND user_id = ?',
-      [gameId, users[0].id]
+    // TODO: Verify bingo is valid
+    // For now, accept all bingo claims
+    
+    await db.query(
+      'UPDATE tickets SET status = ? WHERE id = ?',
+      ['bingo', tickets[0].id]
     );
     
-    res.json({ 
-      isPlaying: tickets.length > 0,
-      isSpectator: tickets.length === 0,
-      ticket: tickets.length > 0 ? tickets[0] : null
-    });
+    res.json({ message: 'Bingo claimed successfully' });
   } catch (error) {
-    console.error('Get game status error:', error);
-    res.status(500).json({ error: 'Failed to get game status' });
+    console.error('Claim bingo error:', error);
+    res.status(500).json({ error: 'Failed to claim bingo' });
   }
 });
 
-// Get game history for user
-router.get('/history', checkAuth, async (req, res) => {
-  try {
-    const telegramId = req.telegramUser.id;
-    
-    const [users] = await db.query(
-      'SELECT id FROM users WHERE telegram_id = ?',
-      [telegramId]
-    );
-    
-    if (users.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
+// Generate bingo card numbers
+function generateBingoCard() {
+  const card = [];
+  
+  // B column (1-15)
+  const bNumbers = generateUniqueNumbers(1, 15, 5);
+  // I column (16-30)
+  const iNumbers = generateUniqueNumbers(16, 30, 5);
+  // N column (31-45) with FREE space
+  const nNumbers = generateUniqueNumbers(31, 45, 4);
+  // G column (46-60)
+  const gNumbers = generateUniqueNumbers(46, 60, 5);
+  // O column (61-75)
+  const oNumbers = generateUniqueNumbers(61, 75, 5);
+  
+  // Arrange in grid
+  for (let row = 0; row < 5; row++) {
+    card.push(bNumbers[row]);
+    card.push(iNumbers[row]);
+    if (row === 2) {
+      card.push('FREE');
+    } else {
+      const nIndex = row > 2 ? row - 1 : row;
+      card.push(nNumbers[nIndex]);
     }
-    
-    const [games] = await db.query(
-      `SELECT g.*, t.card_id, t.is_winner,
-        (SELECT COUNT(*) FROM tickets WHERE game_id = g.id AND is_winner = 1) as winner_count
-       FROM games g
-       JOIN tickets t ON g.id = t.game_id
-       WHERE t.user_id = ?
-       ORDER BY g.created_at DESC
-       LIMIT 20`,
-      [users[0].id]
-    );
-    
-    res.json({ games });
-  } catch (error) {
-    console.error('Get game history error:', error);
-    res.status(500).json({ error: 'Failed to get game history' });
+    card.push(gNumbers[row]);
+    card.push(oNumbers[row]);
   }
-});
+  
+  return card;
+}
 
-// Get user statistics
-router.get('/user-stats', checkAuth, async (req, res) => {
-  try {
-    const telegramId = req.telegramUser.id;
-    
-    const [users] = await db.query(
-      'SELECT id FROM users WHERE telegram_id = ?',
-      [telegramId]
-    );
-    
-    if (users.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
+function generateUniqueNumbers(min, max, count) {
+  const numbers = [];
+  while (numbers.length < count) {
+    const num = Math.floor(Math.random() * (max - min + 1)) + min;
+    if (!numbers.includes(num)) {
+      numbers.push(num);
     }
-    
-    const [stats] = await db.query(
-      `SELECT 
-        COUNT(*) as totalGames,
-        SUM(CASE WHEN t.is_winner = 1 THEN 1 ELSE 0 END) as gamesWon,
-        SUM(CASE WHEN t.is_winner = 1 THEN g.prize_pool / (SELECT COUNT(*) FROM tickets WHERE game_id = g.id AND is_winner = 1) ELSE 0 END) as totalEarnings,
-        0 as totalInvites
-       FROM tickets t
-       JOIN games g ON t.game_id = g.id
-       WHERE t.user_id = ?`,
-      [users[0].id]
-    );
-    
-    res.json(stats[0] || { totalGames: 0, gamesWon: 0, totalEarnings: 0, totalInvites: 0 });
-  } catch (error) {
-    console.error('Get user stats error:', error);
-    res.status(500).json({ error: 'Failed to get user stats' });
   }
-});
-
-// Get general stats for welcome screen
-router.get('/stats', checkAuth, async (req, res) => {
-  try {
-    const [stats] = await db.query(
-      `SELECT 
-        COUNT(DISTINCT t.user_id) as activePlayers,
-        COUNT(*) as totalGames
-       FROM tickets t
-       JOIN games g ON t.game_id = g.id
-       WHERE g.created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)`
-    );
-    
-    res.json(stats[0] || { activePlayers: 0, totalGames: 0 });
-  } catch (error) {
-    console.error('Get stats error:', error);
-    res.status(500).json({ error: 'Failed to get stats' });
-  }
-});
+  return numbers;
+}
 
 module.exports = router;

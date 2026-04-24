@@ -12,6 +12,7 @@ const adminRoutes = require('./routes/admin');
 const adminGameRoutes = require('./routes/admin-game');
 const telegramRoutes = require('./routes/telegram');
 const { initializeGameSocket } = require('./socket/gameSocket');
+const GameEngine = require('./gameEngine');
 const db = require('./config/database');
 
 const app = express();
@@ -73,6 +74,9 @@ app.use('/api/telegram', telegramRoutes);
 
 // Initialize Socket.io for real-time game communication
 initializeGameSocket(io);
+
+// Initialize Game Engine for automatic game management
+const gameEngine = new GameEngine(io);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
