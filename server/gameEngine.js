@@ -13,9 +13,6 @@ class GameEngine {
   startEngine() {
     console.log('🎮 Game Engine started');
     
-    // Emit ready event to socket handler
-    this.io.emit('gameEngineReady', this);
-    
     // Check for games to start every 5 seconds
     setInterval(() => {
       this.checkGamesToStart();

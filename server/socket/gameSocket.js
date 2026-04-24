@@ -1,14 +1,7 @@
 const db = require('../config/database');
 const { validateBingo } = require('../utils/bingoGenerator');
 
-let gameEngine = null;
-
 function initializeGameSocket(io) {
-  // Store reference to game engine when it's created
-  io.on('gameEngineReady', (engine) => {
-    gameEngine = engine;
-  });
-
   io.on('connection', (socket) => {
     console.log('Client connected:', socket.id);
     
@@ -38,6 +31,7 @@ function initializeGameSocket(io) {
     // Join game room
     socket.on('join_game', async ({ gameId, userId }) => {
       try {
+        const gameEngine = io.gameEngine;
         if (gameEngine) {
           await gameEngine.handlePlayerJoin(gameId, userId, socket);
         } else {
@@ -62,6 +56,7 @@ function initializeGameSocket(io) {
     
     // Leave game room
     socket.on('leave_game', ({ gameId, userId }) => {
+      const gameEngine = io.gameEngine;
       if (gameEngine) {
         gameEngine.handlePlayerLeave(gameId, userId, socket);
       } else {
@@ -72,6 +67,7 @@ function initializeGameSocket(io) {
     // Claim bingo
     socket.on('claim_bingo', async ({ gameId, userId, cards }) => {
       try {
+        const gameEngine = io.gameEngine;
         if (gameEngine) {
           await gameEngine.handleBingoClaim(gameId, userId, cards);
         } else {

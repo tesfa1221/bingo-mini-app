@@ -78,6 +78,9 @@ initializeGameSocket(io);
 // Initialize Game Engine for automatic game management
 const gameEngine = new GameEngine(io);
 
+// Store game engine reference for socket handlers
+io.gameEngine = gameEngine;
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
