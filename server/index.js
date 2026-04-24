@@ -84,6 +84,29 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Database test endpoint
+app.get('/test-db', async (req, res) => {
+  try {
+    const [result] = await db.query('SELECT 1 as test');
+    const [userCount] = await db.query('SELECT COUNT(*) as count FROM users');
+    res.json({
+      status: 'ok',
+      database: 'connected',
+      test_query: result[0],
+      user_count: userCount[0].count,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Database test error:', error);
+    res.status(500).json({
+      status: 'error',
+      database: 'failed',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // API info endpoint
 app.get('/api', (req, res) => {
   res.json({
