@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/kbingo/favicon.svg?v=2" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Cache Busting Meta Tags -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    
+    <!-- Telegram WebApp Meta Tags -->
+    <meta name="telegram-web-app" content="true" />
+    <meta name="theme-color" content="#121212" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Kebrchacha Bingo - Real-time multiplayer bingo game with instant payouts" />
+    <meta name="keywords" content="bingo, game, multiplayer, telegram, kebrchacha, ethiopia" />
+    <meta name="author" content="Kebrchacha" />
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Kebrchacha Bingo" />
+    <meta property="og:description" content="Experience the thrill of real-time multiplayer bingo" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/kbingo/favicon.svg?v=2" />
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Kebrchacha Bingo" />
+    <meta name="twitter:description" content="Real-time multiplayer bingo game" />
+    
+    <title>Kebrchacha Bingo v2.0</title>
+    
+    <!-- Telegram WebApp Script -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <style>
+      /* Prevent flash of unstyled content */
+      body {
+        background: linear-gradient(135deg, #0a0a0a, #121212, #1a1a1a);
+        color: white;
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      }
+      
+      /* Loading screen */
+      #loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #0a0a0a, #121212, #1a1a1a);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      }
+      
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(57, 255, 20, 0.3);
+        border-top: 4px solid #39FF14;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      /* Hide loading when app loads */
+      .app-loaded #loading {
+        display: none;
+      }
+      
+      /* Cache buster indicator */
+      .cache-buster {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: rgba(57, 255, 20, 0.2);
+        color: #39FF14;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        z-index: 10000;
+      }
+    </style>
+    <script type="module" crossorigin src="/kbingo/assets/index-DH6_iV7_.js?v=2"></script>
+    <link rel="stylesheet" crossorigin href="/kbingo/assets/index-BmR_6EwN.css?v=2">
+  </head>
+  <body>
+    <!-- Cache Buster Indicator -->
+    <div class="cache-buster">v2.0</div>
+    
+    <!-- Loading Screen -->
+    <div id="loading">
+      <div>
+        <div class="spinner"></div>
+        <p style="margin-top: 16px; color: #39FF14; font-weight: 600;">Loading Kebrchacha v2.0...</p>
+      </div>
+    </div>
+    
+    <!-- React App Root -->
+    <div id="root"></div>
+    
+
+    
+    <script>
+      // Cache busting timestamp
+      console.log('🚀 Kebrchacha Bingo v2.0 - Cache Busted Version');
+      console.log('📅 Build Time:', new Date().toISOString());
+      
+      // Mark app as loaded when React mounts
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          document.body.classList.add('app-loaded');
+          // Hide cache buster after app loads
+          setTimeout(() => {
+            const cacheBuster = document.querySelector('.cache-buster');
+            if (cacheBuster) cacheBuster.style.display = 'none';
+          }, 3000);
+        }, 500);
+      });
+      
+      // Telegram WebApp initialization
+      if (window.Telegram?.WebApp) {
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        
+        // Set theme colors
+        tg.setHeaderColor('#121212');
+        tg.setBackgroundColor('#121212');
+        
+        console.log('🚀 Telegram WebApp initialized - v2.0');
+        console.log('📱 User:', tg.initDataUnsafe?.user?.username || 'Unknown');
+      } else {
+        console.log('🔧 Running in development mode - v2.0');
+      }
+      
+      // Force cache refresh
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          registrations.forEach(registration => registration.unregister());
+        });
+      }
+    </script>
+  </body>
+</html>
