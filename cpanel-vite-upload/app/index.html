@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/kbingo/favicon.svg?nocache=1714046400" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- AGGRESSIVE CACHE BUSTING -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="Thu, 01 Jan 1970 00:00:00 GMT" />
+    <meta name="cache-control" content="no-cache" />
+    <meta name="expires" content="0" />
+    <meta name="pragma" content="no-cache" />
+    
+    <!-- Telegram WebApp Meta Tags -->
+    <meta name="telegram-web-app" content="true" />
+    <meta name="theme-color" content="#121212" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Kebrchacha Bingo - Real-time multiplayer bingo game with instant payouts" />
+    <meta name="keywords" content="bingo, game, multiplayer, telegram, kebrchacha, ethiopia" />
+    <meta name="author" content="Kebrchacha" />
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Kebrchacha Bingo" />
+    <meta property="og:description" content="Experience the thrill of real-time multiplayer bingo" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/kbingo/favicon.svg?nocache=1714046400" />
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Kebrchacha Bingo" />
+    <meta name="twitter:description" content="Real-time multiplayer bingo game" />
+    
+    <title>Kebrchacha Bingo - Fresh App</title>
+    
+    <!-- Telegram WebApp Script -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <style>
+      /* Prevent flash of unstyled content */
+      body {
+        background: linear-gradient(135deg, #0a0a0a, #121212, #1a1a1a);
+        color: white;
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      }
+      
+      /* Loading screen */
+      #loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #0a0a0a, #121212, #1a1a1a);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      }
+      
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(57, 255, 20, 0.3);
+        border-top: 4px solid #39FF14;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      /* Hide loading when app loads */
+      .app-loaded #loading {
+        display: none;
+      }
+      
+      /* Fresh app indicator */
+      .fresh-indicator {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: rgba(57, 255, 20, 0.9);
+        color: #000;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: bold;
+        z-index: 10000;
+      }
+    </style>
+    <script type="module" crossorigin src="/kbingo/assets/index-DH6_iV7_.js?fresh=1714046400"></script>
+    <link rel="stylesheet" crossorigin href="/kbingo/assets/index-BmR_6EwN.css?fresh=1714046400">
+  </head>
+  <body>
+    <!-- Fresh App Indicator -->
+    <div class="fresh-indicator">FRESH APP</div>
+    
+    <!-- Loading Screen -->
+    <div id="loading">
+      <div>
+        <div class="spinner"></div>
+        <p style="margin-top: 16px; color: #39FF14; font-weight: 600;">Loading Fresh Kebrchacha...</p>
+      </div>
+    </div>
+    
+    <!-- React App Root -->
+    <div id="root"></div>
+    
+
+    
+    <script>
+      // Aggressive cache busting
+      console.log('🚀 Kebrchacha Bingo - FRESH APP VERSION');
+      console.log('📅 Fresh Build Time:', new Date().toISOString());
+      console.log('🔄 Cache Busted:', Date.now());
+      
+      // Clear all possible caches
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          names.forEach(name => {
+            console.log('🗑️ Clearing cache:', name);
+            caches.delete(name);
+          });
+        });
+      }
+      
+      // Clear service workers
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          registrations.forEach(registration => {
+            console.log('🗑️ Unregistering service worker');
+            registration.unregister();
+          });
+        });
+      }
+      
+      // Mark app as loaded when React mounts
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          document.body.classList.add('app-loaded');
+          // Hide fresh indicator after app loads
+          setTimeout(() => {
+            const freshIndicator = document.querySelector('.fresh-indicator');
+            if (freshIndicator) freshIndicator.style.display = 'none';
+          }, 5000);
+        }, 500);
+      });
+      
+      // Telegram WebApp initialization
+      if (window.Telegram?.WebApp) {
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        
+        // Set theme colors
+        tg.setHeaderColor('#121212');
+        tg.setBackgroundColor('#121212');
+        
+        console.log('🚀 Telegram WebApp initialized - FRESH VERSION');
+        console.log('📱 User:', tg.initDataUnsafe?.user?.username || 'Unknown');
+        console.log('🆔 WebApp ID:', tg.initDataUnsafe?.user?.id || 'Unknown');
+      } else {
+        console.log('🔧 Running in development mode - FRESH VERSION');
+      }
+      
+      // Force reload if stuck on loading for too long
+      setTimeout(() => {
+        const loading = document.getElementById('loading');
+        if (loading && loading.style.display !== 'none') {
+          console.log('⚠️ App seems stuck, forcing reload...');
+          window.location.reload(true);
+        }
+      }, 10000);
+    </script>
+  </body>
+</html>

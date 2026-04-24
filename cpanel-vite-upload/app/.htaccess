@@ -1,0 +1,101 @@
+# ULTRA-AGGRESSIVE CACHE BUSTING FOR TELEGRAM WEBAPP
+# This .htaccess prevents ALL caching to force fresh content
+
+# Disable all caching
+<IfModule mod_headers.c>
+    # Prevent all caching
+    Header always set Cache-Control "no-cache, no-store, must-revalidate, max-age=0, s-maxage=0"
+    Header always set Pragma "no-cache"
+    Header always set Expires "Thu, 01 Jan 1970 00:00:00 GMT"
+    
+    # Remove caching headers
+    Header always unset ETag
+    Header always unset Last-Modified
+    Header always unset If-Modified-Since
+    Header always unset If-None-Match
+    
+    # Force revalidation
+    Header always set Vary "*"
+    
+    # Telegram-specific headers
+    Header always set X-Telegram-Cache "no-cache"
+    Header always set X-Fresh-Content "true"
+    
+    # Security headers (keep these)
+    Header always set X-Content-Type-Options nosniff
+    Header always set X-Frame-Options DENY
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    
+    # CORS for API calls
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+</IfModule>
+
+# Disable caching for specific file types
+<FilesMatch "\.(html|htm|js|css|json|xml|txt)$">
+    <IfModule mod_headers.c>
+        Header set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+        Header set Expires "Thu, 01 Jan 1970 00:00:00 GMT"
+        Header unset ETag
+        Header unset Last-Modified
+    </IfModule>
+</FilesMatch>
+
+# Disable server-side caching
+<IfModule mod_expires.c>
+    ExpiresActive Off
+</IfModule>
+
+# SPA Routing - Redirect all requests to index.html
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Add timestamp to all requests for cache busting
+    RewriteCond %{QUERY_STRING} !t=
+    RewriteRule ^(.*)$ $1?t=%{TIME} [QSA,L]
+    
+    # Handle React Router
+    RewriteBase /kbingo/app/
+    RewriteRule ^index\.html$ - [L]
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule . /kbingo/app/index.html [L]
+</IfModule>
+
+# MIME Types
+<IfModule mod_mime.c>
+    AddType application/javascript .js
+    AddType text/css .css
+    AddType image/svg+xml .svg
+    AddType application/json .json
+</IfModule>
+
+# Disable ETags completely
+FileETag None
+
+# Security - Prevent access to sensitive files
+<FilesMatch "(^#.*#|\.(bak|config|dist|fla|inc|ini|log|psd|sh|sql|sw[op])|~)$">
+    Order allow,deny
+    Deny from all
+    Satisfy All
+</FilesMatch>
+
+# Prevent access to .htaccess itself
+<Files .htaccess>
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Add fresh content headers
+<IfModule mod_setenvif.c>
+    SetEnvIf Request_URI ".*" FRESH_CONTENT=true
+</IfModule>
+
+# Force no-cache on everything
+<IfModule mod_env.c>
+    SetEnv no-gzip 1
+    SetEnv dont-vary 1
+</IfModule>
