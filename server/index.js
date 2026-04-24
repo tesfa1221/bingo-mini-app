@@ -10,6 +10,7 @@ const gameRoutes = require('./routes/game');
 const cardSelectionRoutes = require('./routes/card-selection');
 const adminRoutes = require('./routes/admin');
 const adminGameRoutes = require('./routes/admin-game');
+const telegramRoutes = require('./routes/telegram');
 const { initializeGameSocket } = require('./socket/gameSocket');
 
 const app = express();
@@ -50,6 +51,7 @@ app.use('/api/game', gameRoutes);
 app.use('/api', cardSelectionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin', adminGameRoutes);
+app.use('/api/telegram', telegramRoutes);
 
 // Initialize Socket.io for real-time game communication
 initializeGameSocket(io);
@@ -74,7 +76,8 @@ app.get('/api', (req, res) => {
       auth: '/api/auth',
       wallet: '/api/wallet', 
       game: '/api/game',
-      admin: '/api/admin'
+      admin: '/api/admin',
+      telegram: '/api/telegram'
     },
     websocket: 'Socket.io enabled for real-time communication',
     status: 'Backend-only deployment'
@@ -92,7 +95,8 @@ app.use('*', (req, res) => {
       '/api/auth',
       '/api/wallet',
       '/api/game', 
-      '/api/admin'
+      '/api/admin',
+      '/api/telegram'
     ]
   });
 });
