@@ -22,9 +22,13 @@ function validateTelegramWebAppData(initData, botToken) {
 }
 
 function checkAuth(req, res, next) {
+  console.log('🔐 Auth middleware called');
   const initData = req.headers['x-telegram-init-data'] || req.body.initData;
 
+  console.log('📨 InitData received:', initData ? `${initData.length} characters` : 'None');
+
   if (!initData) {
+    console.log('❌ No initData provided');
     return res.status(401).json({ error: 'Missing Telegram authentication' });
   }
 
@@ -33,13 +37,18 @@ function checkAuth(req, res, next) {
     const urlParams = new URLSearchParams(initData);
     const userJson = urlParams.get('user');
 
+    console.log('👤 User JSON from initData:', userJson);
+
     if (userJson) {
       const user = JSON.parse(userJson);
+      console.log('✅ Parsed user:', user);
       
       // For development/testing: if auth_date is recent, allow without signature validation
       const authDate = urlParams.get('auth_date');
       const now = Math.floor(Date.now() / 1000);
       const isRecent = authDate && (now - parseInt(authDate)) < 3600; // 1 hour
+      
+      console.log('⏰ Auth date check:', { authDate, now, isRecent });
       
       if (isRecent) {
         console.log('🔧 Development mode: allowing recent auth without signature validation');
@@ -49,6 +58,8 @@ function checkAuth(req, res, next) {
       
       // Production: validate signature
       const isValid = validateTelegramWebAppData(initData, process.env.TELEGRAM_BOT_TOKEN);
+      console.log('🔒 Signature validation:', isValid ? 'Valid' : 'Invalid');
+      
       if (isValid) {
         req.telegramUser = user;
         return next();
@@ -57,11 +68,14 @@ function checkAuth(req, res, next) {
         req.telegramUser = user;
         return next();
       }
+    } else {
+      console.log('❌ No user data in initData');
     }
   } catch (error) {
-    console.error('Auth parsing error:', error);
+    console.error('❌ Auth parsing error:', error);
   }
 
+  console.log('❌ Authentication failed');
   return res.status(401).json({ error: 'Invalid authentication data' });
 }
 
