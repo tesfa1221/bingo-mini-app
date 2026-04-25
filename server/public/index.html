@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 Kebrchacha Bingo</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .logo {
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #39FF14, #32CD32);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px 0;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        .status {
+            background: linear-gradient(45deg, rgba(57, 255, 20, 0.1), rgba(50, 205, 50, 0.1));
+            border: 1px solid rgba(57, 255, 20, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #39FF14, #32CD32);
+            color: black;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(57, 255, 20, 0.3);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .info {
+            color: #888;
+            font-size: 0.9rem;
+            margin: 10px 0;
+        }
+        
+        .success {
+            color: #39FF14;
+            font-weight: bold;
+        }
+        
+        .error {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="logo">🎮 Kebrchacha Bingo</div>
+    
+    <div class="card">
+        <div class="status">
+            <h2>✅ System Online!</h2>
+            <p class="success">Backend: RUNNING</p>
+            <p class="success">Bot: ACTIVE</p>
+            <p class="success">Database: CONNECTED</p>
+            <p class="success">Games: AUTO-CREATING</p>
+        </div>
+        
+        <h3>🎯 Professional Multiplayer Bingo</h3>
+        <p class="info">Real-time gameplay • Dual wallet system • Auto prizes</p>
+        
+        <div style="margin: 30px 0;">
+            <button class="btn" onclick="testLogin()">🔐 Login & Play</button>
+            <button class="btn btn-secondary" onclick="testDeposit()">💰 Test Deposit</button>
+        </div>
+        
+        <div id="userInfo" style="display: none;">
+            <div style="background: rgba(57, 255, 20, 0.1); padding: 15px; border-radius: 10px; margin: 20px 0;">
+                <h4>👤 User Profile</h4>
+                <p id="userName"></p>
+                <p id="userBalance"></p>
+            </div>
+            
+            <button class="btn" onclick="joinGame()">🎮 Join Game (25 ETB)</button>
+            <button class="btn btn-secondary" onclick="createGame()">🆕 Create Game</button>
+        </div>
+        
+        <div style="margin-top: 30px;">
+            <a href="/admin" class="btn btn-secondary">👑 Admin Panel</a>
+        </div>
+    </div>
+
+    <script>
+        let tg = null;
+        let user = null;
+
+        // Initialize Telegram WebApp
+        if (window.Telegram?.WebApp) {
+            tg = window.Telegram.WebApp;
+            tg.ready();
+            tg.expand();
+            console.log('✅ Telegram WebApp initialized');
+        } else {
+            console.log('⚠️ Not in Telegram WebApp - Demo mode');
+        }
+
+        async function testLogin() {
+            if (!tg || !tg.initData) {
+                alert('❌ Please open through @Odabingobot\n\nOr use demo mode for testing.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-telegram-init-data': tg.initData
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    user = data.user;
+                    document.getElementById('userName').textContent = `Name: ${user.username || user.full_name}`;
+                    document.getElementById('userBalance').textContent = `Main: ${user.main_wallet_balance} ETB | Play: ${user.play_wallet_balance} ETB`;
+                    document.getElementById('userInfo').style.display = 'block';
+                    
+                    alert(`✅ Login Success!\n\nWelcome ${user.username || user.full_name}!`);
+                } else {
+                    alert(`❌ Login Failed: ${data.error}`);
+                }
+            } catch (error) {
+                alert(`❌ Network Error: ${error.message}`);
+            }
+        }
+
+        async function testDeposit() {
+            if (!user) {
+                alert('Please login first!');
+                return;
+            }
+
+            const amount = prompt('💳 Enter deposit amount (ETB):');
+            if (!amount || isNaN(amount)) return;
+
+            try {
+                const response = await fetch('/api/wallet/deposit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-telegram-init-data': tg.initData
+                    },
+                    body: JSON.stringify({
+                        amount: parseFloat(amount),
+                        payment_method: 'mobile_money',
+                        transaction_ref: `WEB${Date.now()}`
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(`✅ Deposit Request Submitted!\n\nAmount: ${amount} ETB\nReference: ${data.transactionRef}\n\nAdmin will approve shortly.`);
+                } else {
+                    alert(`❌ Deposit Failed: ${data.error}`);
+                }
+            } catch (error) {
+                alert(`❌ Network Error: ${error.message}`);
+            }
+        }
+
+        async function joinGame() {
+            if (!user) {
+                alert('Please login first!');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/game/active');
+                const data = await response.json();
+                
+                if (data.games && data.games.length > 0) {
+                    const game = data.games[0];
+                    alert(`🎮 Joining Game #${game.id}\n\nEntry Fee: ${game.entry_fee} ETB\nPlayers: ${game.player_count}/10\n\nGame system is ready!`);
+                } else {
+                    alert('🎮 No active games found.\n\nGames auto-create every 3 minutes.\nTry creating a new game!');
+                }
+            } catch (error) {
+                alert(`❌ Error: ${error.message}`);
+            }
+        }
+
+        async function createGame() {
+            if (!user) {
+                alert('Please login first!');
+                return;
+            }
+
+            const entryFee = prompt('🎯 Enter entry fee (25, 50, or 100 ETB):');
+            if (!entryFee || ![25, 50, 100].includes(parseInt(entryFee))) {
+                alert('Please enter 25, 50, or 100 ETB');
+                return;
+            }
+
+            alert(`🎮 Creating Game!\n\nEntry Fee: ${entryFee} ETB\nMax Players: 10\n\nGame creation system is ready!`);
+        }
+    </script>
+</body>
+</html>

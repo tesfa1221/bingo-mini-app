@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>👑 Kebrchacha Admin</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #39FF14, #32CD32);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #39FF14, #32CD32);
+            color: black;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E8E);
+            color: white;
+        }
+        
+        .transaction-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #39FF14;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">👑 Kebrchacha Admin</div>
+        <p style="color: #888;">Administrative Control Panel</p>
+    </div>
+
+    <div class="card">
+        <h3 style="color: #39FF14; margin-bottom: 20px;">💳 Pending Deposits</h3>
+        <div id="pendingTransactions">
+            <div class="loading">Loading pending deposits...</div>
+        </div>
+        <button class="btn" onclick="loadPendingTransactions()">🔄 Refresh</button>
+    </div>
+
+    <div class="card">
+        <h3 style="color: #39FF14; margin-bottom: 20px;">📊 System Status</h3>
+        <p>✅ Backend: Online</p>
+        <p>✅ Database: Connected</p>
+        <p>✅ Bot: Active (@Odabingobot)</p>
+        <p>✅ Games: Auto-creating every 3 minutes</p>
+    </div>
+
+    <script>
+        let tg = null;
+        let adminUser = null;
+
+        // Initialize Telegram WebApp
+        if (window.Telegram?.WebApp) {
+            tg = window.Telegram.WebApp;
+            tg.ready();
+            tg.expand();
+        }
+
+        // Check admin access on load
+        window.onload = async function() {
+            await checkAdminAccess();
+        };
+
+        async function checkAdminAccess() {
+            if (!tg || !tg.initData) {
+                document.getElementById('pendingTransactions').innerHTML = `
+                    <div style="text-align: center; color: #ff6b6b;">
+                        ❌ Please open through @Odabingobot with admin account
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-telegram-init-data': tg.initData
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    adminUser = data.user;
+                    
+                    if (adminUser.telegram_id?.toString() !== '991793142') {
+                        document.getElementById('pendingTransactions').innerHTML = `
+                            <div style="text-align: center; color: #ff6b6b;">
+                                ❌ Admin access required! Only authorized administrators can access this panel.
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    await loadPendingTransactions();
+                } else {
+                    document.getElementById('pendingTransactions').innerHTML = `
+                        <div style="text-align: center; color: #ff6b6b;">
+                            ❌ Authentication failed: ${data.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('pendingTransactions').innerHTML = `
+                    <div style="text-align: center; color: #ff6b6b;">
+                        ❌ Network error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function loadPendingTransactions() {
+            if (!adminUser) return;
+
+            try {
+                const response = await fetch('/api/admin/transactions/pending', {
+                    headers: {
+                        'x-telegram-init-data': tg.initData
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    displayPendingTransactions(data.transactions);
+                } else {
+                    document.getElementById('pendingTransactions').innerHTML = `
+                        <div style="text-align: center; color: #ff6b6b;">
+                            ❌ Failed to load transactions: ${data.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('pendingTransactions').innerHTML = `
+                    <div style="text-align: center; color: #ff6b6b;">
+                        ❌ Network error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function displayPendingTransactions(transactions) {
+            const container = document.getElementById('pendingTransactions');
+            
+            if (!transactions || transactions.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; color: #888;">
+                        ✅ No pending deposits<br>
+                        All deposits have been processed!
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = transactions.map(transaction => `
+                <div class="transaction-item" id="transaction-${transaction.id}">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                        <div>
+                            <div style="font-weight: bold; color: #39FF14; margin-bottom: 5px;">
+                                👤 ${transaction.username || 'User'} (ID: ${transaction.telegram_id})
+                            </div>
+                            <div style="font-size: 1.2rem; color: #D4AF37; font-weight: bold;">
+                                💰 ${parseFloat(transaction.amount).toFixed(2)} ETB
+                            </div>
+                            <div style="color: #888; font-size: 0.8rem; margin-top: 5px;">
+                                📅 ${new Date(transaction.created_at).toLocaleString()}<br>
+                                🔗 Ref: ${transaction.transaction_ref}
+                            </div>
+                        </div>
+                        <div>
+                            <button class="btn" onclick="approveTransaction(${transaction.id}, ${transaction.amount})">
+                                ✅ Approve
+                            </button>
+                            <button class="btn btn-danger" onclick="rejectTransaction(${transaction.id})">
+                                ❌ Reject
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function approveTransaction(transactionId, amount) {
+            if (!confirm(`Approve deposit of ${amount} ETB?`)) return;
+
+            try {
+                const adminNote = prompt('Admin note (optional):') || 'Approved by admin';
+                
+                const response = await fetch(`/api/admin/transactions/${transactionId}/approve`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-telegram-init-data': tg.initData
+                    },
+                    body: JSON.stringify({ adminNote })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(`✅ Transaction approved successfully!\n\nAmount: ${amount} ETB\nTransaction ID: ${transactionId}`);
+                    
+                    // Remove transaction from display
+                    const transactionElement = document.getElementById(`transaction-${transactionId}`);
+                    if (transactionElement) {
+                        transactionElement.style.opacity = '0.5';
+                        transactionElement.innerHTML = `
+                            <div style="text-align: center; color: #39FF14; font-weight: bold; padding: 20px;">
+                                ✅ APPROVED - ${amount} ETB
+                            </div>
+                        `;
+                        
+                        setTimeout(() => {
+                            loadPendingTransactions(); // Refresh the list
+                        }, 2000);
+                    }
+                } else {
+                    alert(`❌ Failed to approve transaction:\n${data.error}`);
+                }
+            } catch (error) {
+                alert(`❌ Network error: ${error.message}`);
+            }
+        }
+
+        async function rejectTransaction(transactionId) {
+            const reason = prompt('Reason for rejection:');
+            if (!reason) return;
+
+            try {
+                const response = await fetch(`/api/admin/transactions/${transactionId}/reject`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-telegram-init-data': tg.initData
+                    },
+                    body: JSON.stringify({ adminNote: reason })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(`❌ Transaction rejected successfully!\n\nReason: ${reason}`);
+                    
+                    // Remove transaction from display
+                    const transactionElement = document.getElementById(`transaction-${transactionId}`);
+                    if (transactionElement) {
+                        transactionElement.style.opacity = '0.5';
+                        transactionElement.innerHTML = `
+                            <div style="text-align: center; color: #ff6b6b; font-weight: bold; padding: 20px;">
+                                ❌ REJECTED - ${reason}
+                            </div>
+                        `;
+                        
+                        setTimeout(() => {
+                            loadPendingTransactions(); // Refresh the list
+                        }, 2000);
+                    }
+                } else {
+                    alert(`❌ Failed to reject transaction:\n${data.error}`);
+                }
+            } catch (error) {
+                alert(`❌ Network error: ${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html>
