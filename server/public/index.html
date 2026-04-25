@@ -13,6 +13,11 @@
             color: white;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -28,128 +33,470 @@
             -webkit-text-fill-color: transparent;
             margin-bottom: 30px;
             text-align: center;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 20px rgba(57, 255, 20, 0.5)); }
+            to { filter: drop-shadow(0 0 30px rgba(57, 255, 20, 0.8)); }
         }
         
         .card {
             background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 30px;
+            border-radius: 25px;
+            padding: 40px;
             margin: 20px 0;
             text-align: center;
             max-width: 500px;
             width: 100%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
         }
         
-        .status {
-            background: linear-gradient(45deg, rgba(57, 255, 20, 0.1), rgba(50, 205, 50, 0.1));
-            border: 1px solid rgba(57, 255, 20, 0.3);
-            border-radius: 15px;
-            padding: 20px;
+        .card:hover {
+            border-color: rgba(57, 255, 20, 0.3);
+            transform: translateY(-5px);
+        }
+        
+        .form-group {
             margin: 20px 0;
+            text-align: left;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #39FF14;
+            font-weight: bold;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #39FF14;
+            box-shadow: 0 0 20px rgba(57, 255, 20, 0.3);
+        }
+        
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
         }
         
         .btn {
             background: linear-gradient(45deg, #39FF14, #32CD32);
             color: black;
-            padding: 15px 30px;
+            padding: 18px 35px;
             border: none;
             border-radius: 15px;
             font-size: 1.1rem;
             font-weight: bold;
             cursor: pointer;
-            margin: 10px;
+            margin: 15px 10px;
             text-decoration: none;
             display: inline-block;
             transition: all 0.3s ease;
+            min-width: 150px;
         }
         
         .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(57, 255, 20, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(57, 255, 20, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(-1px);
         }
         
         .btn-secondary {
             background: rgba(255, 255, 255, 0.1);
             color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.2);
         }
         
-        .info {
-            color: #888;
-            font-size: 0.9rem;
-            margin: 10px 0;
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 15px 30px rgba(255, 255, 255, 0.1);
         }
         
-        .success {
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-online { background: #39FF14; }
+        .status-offline { background: #ff6b6b; }
+        
+        .welcome-bonus {
+            background: linear-gradient(45deg, rgba(212, 175, 55, 0.1), rgba(255, 215, 0, 0.1));
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
             color: #39FF14;
-            font-weight: bold;
+            padding: 30px;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(57, 255, 20, 0.3);
+            border-top: 4px solid #39FF14;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         
         .error {
+            background: rgba(255, 107, 107, 0.1);
+            border: 2px solid rgba(255, 107, 107, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
             color: #ff6b6b;
+        }
+        
+        .success {
+            background: rgba(57, 255, 20, 0.1);
+            border: 2px solid rgba(57, 255, 20, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #39FF14;
+        }
+        
+        .game-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 25px 0;
+        }
+        
+        .stat-item {
+            background: rgba(57, 255, 20, 0.1);
+            border: 1px solid rgba(57, 255, 20, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
             font-weight: bold;
+            color: #39FF14;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #888;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 480px) {
+            .container { padding: 15px; }
+            .card { padding: 25px; }
+            .logo { font-size: 2.5rem; }
+            .game-stats { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <div class="logo">🎮 Kebrchacha Bingo</div>
-    
-    <div class="card">
-        <div class="status">
-            <h2>✅ System Online!</h2>
-            <p class="success">Backend: RUNNING</p>
-            <p class="success">Bot: ACTIVE</p>
-            <p class="success">Database: CONNECTED</p>
-            <p class="success">Games: AUTO-CREATING</p>
+    <div class="container">
+        <div class="logo">🎮 Kebrchacha Bingo</div>
+        
+        <!-- Loading Screen -->
+        <div id="loadingScreen" class="card">
+            <div class="loading">
+                <div class="spinner"></div>
+                <span>Initializing Kebrchacha...</span>
+            </div>
         </div>
-        
-        <h3>🎯 Professional Multiplayer Bingo</h3>
-        <p class="info">Real-time gameplay • Dual wallet system • Auto prizes</p>
-        
-        <div style="margin: 30px 0;">
-            <button class="btn" onclick="testLogin()">🔐 Login & Play</button>
-            <button class="btn btn-secondary" onclick="testDeposit()">💰 Test Deposit</button>
-        </div>
-        
-        <div id="userInfo" style="display: none;">
-            <div style="background: rgba(57, 255, 20, 0.1); padding: 15px; border-radius: 10px; margin: 20px 0;">
-                <h4>👤 User Profile</h4>
-                <p id="userName"></p>
-                <p id="userBalance"></p>
+
+        <!-- Registration Screen -->
+        <div id="registrationScreen" class="card" style="display: none;">
+            <h2 style="color: #39FF14; margin-bottom: 25px;">🎯 Join Kebrchacha Bingo</h2>
+            
+            <div class="welcome-bonus">
+                <h3 style="color: #D4AF37; margin-bottom: 10px;">🎁 Welcome Bonus</h3>
+                <p style="margin-bottom: 10px;">Get <strong>100 ETB</strong> in Main Wallet</p>
+                <p>Plus <strong>50 ETB</strong> in Play Wallet</p>
+                <p style="font-size: 0.8rem; color: #888; margin-top: 10px;">Free money to start playing!</p>
             </div>
             
-            <button class="btn" onclick="joinGame()">🎮 Join Game (25 ETB)</button>
-            <button class="btn btn-secondary" onclick="createGame()">🆕 Create Game</button>
+            <form id="registrationForm">
+                <div class="form-group">
+                    <label class="form-label">📱 Phone Number</label>
+                    <input type="tel" id="phoneNumber" class="form-input" 
+                           placeholder="+251912345678" required>
+                    <small style="color: #888; font-size: 0.8rem;">Used for account security and withdrawals</small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">👤 Full Name</label>
+                    <input type="text" id="fullName" class="form-input" 
+                           placeholder="Enter your full name" required>
+                    <small style="color: #888; font-size: 0.8rem;">As it appears on your ID</small>
+                </div>
+                
+                <button type="submit" class="btn">
+                    🚀 Complete Registration
+                </button>
+            </form>
+            
+            <p style="font-size: 0.8rem; color: #888; margin-top: 20px;">
+                By registering, you agree to our terms and conditions
+            </p>
         </div>
-        
-        <div style="margin-top: 30px;">
-            <a href="/admin" class="btn btn-secondary">👑 Admin Panel</a>
+
+        <!-- Game Dashboard -->
+        <div id="gameDashboard" class="card" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <div>
+                    <h2 style="color: #39FF14; margin: 0;">Welcome Back!</h2>
+                    <p id="userName" style="color: #888; margin: 5px 0 0 0;"></p>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 1.2rem; font-weight: bold; color: #D4AF37;" id="userBalance"></div>
+                    <div style="font-size: 0.8rem; color: #888;">Play Wallet</div>
+                </div>
+            </div>
+            
+            <div class="game-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="activeGames">3</div>
+                    <div class="stat-label">Active Games</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="onlinePlayers">47</div>
+                    <div class="stat-label">Online Players</div>
+                </div>
+            </div>
+            
+            <div style="margin: 30px 0;">
+                <h3 style="color: #39FF14; margin-bottom: 20px;">🎮 Quick Play</h3>
+                <button class="btn" onclick="joinQuickGame(25)">
+                    ⚡ Quick Game (25 ETB)
+                </button>
+                <button class="btn btn-secondary" onclick="joinQuickGame(50)">
+                    🎯 Standard Game (50 ETB)
+                </button>
+                <button class="btn btn-secondary" onclick="joinQuickGame(100)">
+                    💎 Premium Game (100 ETB)
+                </button>
+            </div>
+            
+            <div style="margin: 30px 0;">
+                <button class="btn btn-secondary" onclick="showWallet()">
+                    💰 Manage Wallet
+                </button>
+                <button class="btn btn-secondary" onclick="showGameHistory()">
+                    📊 Game History
+                </button>
+            </div>
+        </div>
+
+        <!-- Error Screen -->
+        <div id="errorScreen" class="card" style="display: none;">
+            <div style="text-align: center;">
+                <div style="font-size: 4rem; margin-bottom: 20px;">❌</div>
+                <h2 style="color: #ff6b6b; margin-bottom: 15px;">Connection Error</h2>
+                <p id="errorMessage" style="color: #888; margin-bottom: 25px;"></p>
+                <button class="btn" onclick="location.reload()">
+                    🔄 Try Again
+                </button>
+            </div>
         </div>
     </div>
 
     <script>
         let tg = null;
         let user = null;
+        let isRegistered = false;
 
-        // Initialize Telegram WebApp
-        if (window.Telegram?.WebApp) {
-            tg = window.Telegram.WebApp;
-            tg.ready();
-            tg.expand();
-            console.log('✅ Telegram WebApp initialized');
-        } else {
-            console.log('⚠️ Not in Telegram WebApp - Demo mode');
+        // Initialize app
+        async function initApp() {
+            try {
+                console.log('🚀 Starting Kebrchacha Bingo...');
+                
+                // Initialize Telegram WebApp
+                if (window.Telegram?.WebApp) {
+                    tg = window.Telegram.WebApp;
+                    tg.ready();
+                    tg.expand();
+                    tg.setHeaderColor('#0a0a0a');
+                    tg.setBackgroundColor('#0a0a0a');
+                    
+                    console.log('📱 Telegram WebApp initialized');
+                    
+                    // Wait for initData
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    if (tg.initData) {
+                        console.log('🔑 InitData available, checking registration...');
+                        await checkRegistrationStatus();
+                    } else {
+                        showError('Please open this app through @Odabingobot');
+                    }
+                } else {
+                    console.log('❌ Not in Telegram WebApp');
+                    showError('Please open this app through @Odabingobot');
+                }
+            } catch (error) {
+                console.error('❌ Init error:', error);
+                showError('Failed to initialize app: ' + error.message);
+            }
         }
 
-        async function testLogin() {
-            if (!tg || !tg.initData) {
-                alert('❌ Please open through @Odabingobot\n\nOr use demo mode for testing.');
+        // Check registration status
+        async function checkRegistrationStatus() {
+            try {
+                const response = await fetch('/api/registration/status', {
+                    headers: {
+                        'x-telegram-init-data': tg.initData
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    isRegistered = data.isRegistered;
+                    
+                    if (isRegistered) {
+                        console.log('✅ User is registered, loading dashboard...');
+                        await loadUserDashboard();
+                    } else {
+                        console.log('📝 User needs registration');
+                        showRegistrationScreen();
+                    }
+                } else {
+                    // User doesn't exist, show registration
+                    console.log('👤 New user, showing registration');
+                    showRegistrationScreen();
+                }
+            } catch (error) {
+                console.error('❌ Registration check error:', error);
+                showError('Failed to check registration status');
+            }
+        }
+
+        // Show registration screen
+        function showRegistrationScreen() {
+            hideAllScreens();
+            document.getElementById('registrationScreen').style.display = 'block';
+            
+            // Pre-fill name if available from Telegram
+            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                const telegramUser = tg.initDataUnsafe.user;
+                const fullName = `${telegramUser.first_name || ''} ${telegramUser.last_name || ''}`.trim();
+                if (fullName) {
+                    document.getElementById('fullName').value = fullName;
+                }
+            }
+        }
+
+        // Handle registration form
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('registrationForm');
+            if (form) {
+                form.addEventListener('submit', handleRegistration);
+            }
+        });
+
+        async function handleRegistration(event) {
+            event.preventDefault();
+            
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+            const fullName = document.getElementById('fullName').value.trim();
+            
+            // Validate inputs
+            if (!phoneNumber || phoneNumber.length < 10) {
+                alert('❌ Please enter a valid phone number');
                 return;
             }
-
+            
+            if (!fullName || fullName.length < 2) {
+                alert('❌ Please enter your full name');
+                return;
+            }
+            
             try {
+                // Show loading
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                const originalText = submitBtn.textContent;
+                submitBtn.textContent = '⏳ Registering...';
+                submitBtn.disabled = true;
+                
+                const response = await fetch('/api/registration/complete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-telegram-init-data': tg.initData
+                    },
+                    body: JSON.stringify({
+                        phoneNumber,
+                        fullName
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    user = data.user;
+                    isRegistered = true;
+                    
+                    // Show success message
+                    alert(`🎉 Registration Successful!\n\nWelcome ${fullName}!\n\n🎁 Welcome Bonus:\n💰 100 ETB in Main Wallet\n🎮 50 ETB in Play Wallet\n\nYou can start playing immediately!`);
+                    
+                    await loadUserDashboard();
+                } else {
+                    alert(`❌ Registration Failed: ${data.error}`);
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('❌ Registration error:', error);
+                alert(`❌ Network Error: ${error.message}`);
+                
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                submitBtn.textContent = '🚀 Complete Registration';
+                submitBtn.disabled = false;
+            }
+        }
+
+        // Load user dashboard
+        async function loadUserDashboard() {
+            try {
+                // Get user data
                 const response = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: {
@@ -162,89 +509,92 @@
 
                 if (response.ok) {
                     user = data.user;
-                    document.getElementById('userName').textContent = `Name: ${user.username || user.full_name}`;
-                    document.getElementById('userBalance').textContent = `Main: ${user.main_wallet_balance} ETB | Play: ${user.play_wallet_balance} ETB`;
-                    document.getElementById('userInfo').style.display = 'block';
-                    
-                    alert(`✅ Login Success!\n\nWelcome ${user.username || user.full_name}!`);
+                    showGameDashboard();
                 } else {
-                    alert(`❌ Login Failed: ${data.error}`);
+                    showError('Failed to load user data: ' + data.error);
                 }
             } catch (error) {
-                alert(`❌ Network Error: ${error.message}`);
+                console.error('❌ Dashboard load error:', error);
+                showError('Failed to load dashboard');
             }
         }
 
-        async function testDeposit() {
-            if (!user) {
-                alert('Please login first!');
-                return;
+        // Show game dashboard
+        function showGameDashboard() {
+            hideAllScreens();
+            document.getElementById('gameDashboard').style.display = 'block';
+            
+            // Update user info
+            if (user) {
+                document.getElementById('userName').textContent = user.full_name || user.username || 'Player';
+                document.getElementById('userBalance').textContent = `${(user.play_wallet_balance || 0).toFixed(0)} ETB`;
             }
-
-            const amount = prompt('💳 Enter deposit amount (ETB):');
-            if (!amount || isNaN(amount)) return;
-
-            try {
-                const response = await fetch('/api/wallet/deposit', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-telegram-init-data': tg.initData
-                    },
-                    body: JSON.stringify({
-                        amount: parseFloat(amount),
-                        payment_method: 'mobile_money',
-                        transaction_ref: `WEB${Date.now()}`
-                    })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    alert(`✅ Deposit Request Submitted!\n\nAmount: ${amount} ETB\nReference: ${data.transactionRef}\n\nAdmin will approve shortly.`);
-                } else {
-                    alert(`❌ Deposit Failed: ${data.error}`);
-                }
-            } catch (error) {
-                alert(`❌ Network Error: ${error.message}`);
-            }
+            
+            // Update game stats (mock data for now)
+            updateGameStats();
         }
 
-        async function joinGame() {
+        // Update game statistics
+        function updateGameStats() {
+            // Mock data - in real implementation, fetch from API
+            document.getElementById('activeGames').textContent = Math.floor(Math.random() * 5) + 2;
+            document.getElementById('onlinePlayers').textContent = Math.floor(Math.random() * 50) + 20;
+        }
+
+        // Join quick game
+        async function joinQuickGame(entryFee) {
             if (!user) {
-                alert('Please login first!');
+                alert('❌ Please login first');
                 return;
             }
-
+            
+            if ((user.play_wallet_balance || 0) < entryFee) {
+                alert(`❌ Insufficient balance!\n\nYou need ${entryFee} ETB to join this game.\nCurrent balance: ${(user.play_wallet_balance || 0).toFixed(0)} ETB\n\nPlease add funds to your wallet.`);
+                showWallet();
+                return;
+            }
+            
             try {
-                const response = await fetch('/api/game/active');
-                const data = await response.json();
+                // For now, show game joining message
+                alert(`🎮 Joining ${entryFee} ETB Game!\n\n⏳ Finding available game...\n🎯 Entry fee: ${entryFee} ETB\n🏆 Prize pool: ${entryFee * 8} ETB\n\nGame will start soon!`);
                 
-                if (data.games && data.games.length > 0) {
-                    const game = data.games[0];
-                    alert(`🎮 Joining Game #${game.id}\n\nEntry Fee: ${game.entry_fee} ETB\nPlayers: ${game.player_count}/10\n\nGame system is ready!`);
-                } else {
-                    alert('🎮 No active games found.\n\nGames auto-create every 3 minutes.\nTry creating a new game!');
-                }
+                // TODO: Implement actual game joining logic
+                // const response = await fetch('/api/game/join', { ... });
+                
             } catch (error) {
-                alert(`❌ Error: ${error.message}`);
+                alert(`❌ Failed to join game: ${error.message}`);
             }
         }
 
-        async function createGame() {
-            if (!user) {
-                alert('Please login first!');
-                return;
-            }
-
-            const entryFee = prompt('🎯 Enter entry fee (25, 50, or 100 ETB):');
-            if (!entryFee || ![25, 50, 100].includes(parseInt(entryFee))) {
-                alert('Please enter 25, 50, or 100 ETB');
-                return;
-            }
-
-            alert(`🎮 Creating Game!\n\nEntry Fee: ${entryFee} ETB\nMax Players: 10\n\nGame creation system is ready!`);
+        // Show wallet
+        function showWallet() {
+            alert('💰 Wallet Management\n\n🔄 Coming Soon!\n\nFeatures:\n• Add funds via mobile money\n• Transfer between wallets\n• View transaction history\n• Withdraw winnings');
         }
+
+        // Show game history
+        function showGameHistory() {
+            alert('📊 Game History\n\n🔄 Coming Soon!\n\nFeatures:\n• View past games\n• See win/loss record\n• Track earnings\n• Game statistics');
+        }
+
+        // Utility functions
+        function hideAllScreens() {
+            document.getElementById('loadingScreen').style.display = 'none';
+            document.getElementById('registrationScreen').style.display = 'none';
+            document.getElementById('gameDashboard').style.display = 'none';
+            document.getElementById('errorScreen').style.display = 'none';
+        }
+
+        function showError(message) {
+            hideAllScreens();
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorScreen').style.display = 'block';
+        }
+
+        // Initialize app when page loads
+        document.addEventListener('DOMContentLoaded', initApp);
+
+        // Update stats every 30 seconds
+        setInterval(updateGameStats, 30000);
     </script>
 </body>
 </html>

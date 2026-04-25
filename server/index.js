@@ -11,6 +11,7 @@ const cardSelectionRoutes = require('./routes/card-selection');
 const adminRoutes = require('./routes/admin');
 const adminGameRoutes = require('./routes/admin-game');
 const telegramRoutes = require('./routes/telegram');
+const registrationRoutes = require('./routes/registration');
 const { initializeGameSocket } = require('./socket/gameSocket');
 const SimpleGameEngine = require('./simpleGameEngine');
 const db = require('./config/database');
@@ -79,6 +80,7 @@ app.use('/api', cardSelectionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin', adminGameRoutes);
 app.use('/api/telegram', telegramRoutes);
+app.use('/api/registration', registrationRoutes);
 
 // Initialize Socket.io for real-time game communication
 initializeGameSocket(io);
