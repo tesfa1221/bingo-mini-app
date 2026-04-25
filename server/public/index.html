@@ -554,16 +554,8 @@
                 return;
             }
             
-            try {
-                // For now, show game joining message
-                alert(`🎮 Joining ${entryFee} ETB Game!\n\n⏳ Finding available game...\n🎯 Entry fee: ${entryFee} ETB\n🏆 Prize pool: ${entryFee * 8} ETB\n\nGame will start soon!`);
-                
-                // TODO: Implement actual game joining logic
-                // const response = await fetch('/api/game/join', { ... });
-                
-            } catch (error) {
-                alert(`❌ Failed to join game: ${error.message}`);
-            }
+            // Redirect to game interface
+            window.location.href = '/game';
         }
 
         // Show wallet

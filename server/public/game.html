@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 Kebrchacha Bingo Game</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .game-header {
+            background: rgba(18, 18, 18, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(57, 255, 20, 0.2);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .game-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .game-id {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #39FF14;
+        }
+        
+        .game-status {
+            background: rgba(57, 255, 20, 0.2);
+            color: #39FF14;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .user-balance {
+            background: rgba(212, 175, 55, 0.2);
+            color: #D4AF37;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+        
+        .game-container {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .current-ball-display {
+            background: linear-gradient(145deg, rgba(57, 255, 20, 0.1), rgba(50, 205, 50, 0.05));
+            border: 2px solid rgba(57, 255, 20, 0.3);
+            border-radius: 25px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .current-ball-display::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(57, 255, 20, 0.1), transparent);
+            animation: shimmer 3s ease-in-out infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+        
+        .current-ball {
+            font-size: 4rem;
+            font-weight: 900;
+            color: #39FF14;
+            text-shadow: 0 0 30px rgba(57, 255, 20, 0.8);
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .ball-timer {
+            font-size: 1.5rem;
+            color: #D4AF37;
+            font-weight: bold;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .bingo-cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .bingo-card {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border: 2px solid rgba(57, 255, 20, 0.3);
+            border-radius: 20px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .bingo-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(57, 255, 20, 0.2);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .card-title {
+            color: #39FF14;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .auto-daub-indicator {
+            background: rgba(57, 255, 20, 0.2);
+            color: #39FF14;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        
+        .bingo-header {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .bingo-letter {
+            background: linear-gradient(45deg, #39FF14, #32CD32);
+            color: black;
+            font-weight: bold;
+            text-align: center;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .bingo-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+        
+        .bingo-cell {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 55px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .bingo-cell.marked {
+            background: linear-gradient(45deg, #39FF14, #32CD32);
+            color: black;
+            border-color: #39FF14;
+            transform: scale(0.95);
+        }
+        
+        .bingo-cell.called {
+            background: linear-gradient(45deg, #D4AF37, #FFD700);
+            color: black;
+            border-color: #D4AF37;
+            animation: callPulse 0.6s ease-in-out;
+        }
+        
+        .bingo-cell.free {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E8E);
+            color: white;
+            border-color: #FF6B6B;
+        }
+        
+        @keyframes callPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); box-shadow: 0 0 20px rgba(212, 175, 55, 0.8); }
+        }
+        
+        .called-numbers-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            color: #39FF14;
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .numbers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+            gap: 10px;
+        }
+        
+        .called-number {
+            background: rgba(57, 255, 20, 0.2);
+            border: 1px solid rgba(57, 255, 20, 0.4);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        
+        .called-number:hover {
+            background: rgba(57, 255, 20, 0.3);
+            transform: scale(1.05);
+        }
+        
+        .players-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .player-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .player-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #39FF14, #32CD32);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: black;
+            font-size: 1.1rem;
+        }
+        
+        .player-info {
+            flex: 1;
+        }
+        
+        .player-name {
+            font-weight: bold;
+            color: #39FF14;
+            margin-bottom: 3px;
+        }
+        
+        .player-status {
+            font-size: 0.8rem;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+        
+        .status-playing { background: rgba(57, 255, 20, 0.2); color: #39FF14; }
+        .status-bingo { background: rgba(212, 175, 55, 0.2); color: #D4AF37; }
+        .status-winner { background: rgba(255, 107, 107, 0.2); color: #FF6B6B; }
+        
+        .bingo-button {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(45deg, #D4AF37, #FFD700);
+            color: black;
+            border: none;
+            border-radius: 25px;
+            padding: 20px 40px;
+            font-size: 1.4rem;
+            font-weight: bold;
+            cursor: pointer;
+            animation: bingoGlow 2s ease-in-out infinite alternate;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.5);
+        }
+        
+        @keyframes bingoGlow {
+            from { 
+                box-shadow: 0 10px 30px rgba(212, 175, 55, 0.5);
+                transform: translateX(-50%) scale(1);
+            }
+            to { 
+                box-shadow: 0 15px 40px rgba(212, 175, 55, 0.8);
+                transform: translateX(-50%) scale(1.05);
+            }
+        }
+        
+        .game-controls {
+            position: fixed;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 100;
+        }
+        
+        .control-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .control-btn:hover {
+            background: rgba(57, 255, 20, 0.2);
+            transform: scale(1.1);
+        }
+        
+        @media (max-width: 768px) {
+            .game-container { padding: 15px; }
+            .current-ball { font-size: 3rem; }
+            .bingo-cards-container { grid-template-columns: 1fr; }
+            .game-controls { display: none; }
+            .bingo-button { 
+                bottom: 20px;
+                padding: 15px 30px;
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-header">
+        <div class="game-info">
+            <div class="game-id">Game #<span id="gameId">1234</span></div>
+            <div class="game-status" id="gameStatus">PLAYING</div>
+        </div>
+        <div class="user-balance" id="userBalance">50 ETB</div>
+    </div>
+
+    <div class="game-container">
+        <!-- Current Ball Display -->
+        <div class="current-ball-display">
+            <div class="current-ball" id="currentBall">B-7</div>
+            <div class="ball-timer" id="ballTimer">Next ball in: 7s</div>
+        </div>
+
+        <!-- Bingo Cards -->
+        <div class="bingo-cards-container" id="bingoCards">
+            <!-- Cards will be generated here -->
+        </div>
+
+        <!-- Called Numbers -->
+        <div class="called-numbers-section">
+            <div class="section-title">
+                📋 Called Numbers (<span id="calledCount">5</span>/75)
+            </div>
+            <div class="numbers-grid" id="calledNumbers">
+                <!-- Called numbers will appear here -->
+            </div>
+        </div>
+
+        <!-- Players -->
+        <div class="players-section">
+            <div class="section-title">
+                👥 Players (<span id="playerCount">4</span>/10)
+            </div>
+            <div class="players-grid" id="playersGrid">
+                <!-- Players will appear here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Controls -->
+    <div class="game-controls">
+        <button class="control-btn" onclick="toggleSound()" title="Toggle Sound">🔊</button>
+        <button class="control-btn" onclick="showHelp()" title="Help">❓</button>
+        <button class="control-btn" onclick="leaveGame()" title="Leave Game">🚪</button>
+    </div>
+
+    <!-- BINGO Button (shown when player has bingo) -->
+    <button class="bingo-button" id="bingoButton" style="display: none;" onclick="claimBingo()">
+        🏆 BINGO!
+    </button>
+
+    <script>
+        let tg = null;
+        let socket = null;
+        let gameData = null;
+        let myCards = [];
+        let calledNumbers = [];
+        let currentBall = null;
+        let gameTimer = 7;
+        let timerInterval = null;
+        let soundEnabled = true;
+
+        // Initialize game
+        async function initGame() {
+            try {
+                console.log('🎮 Initializing Kebrchacha Bingo Game...');
+                
+                // Initialize Telegram WebApp
+                if (window.Telegram?.WebApp) {
+                    tg = window.Telegram.WebApp;
+                    tg.ready();
+                    tg.expand();
+                    tg.setHeaderColor('#0a0a0a');
+                    tg.setBackgroundColor('#0a0a0a');
+                }
+                
+                // Initialize Socket.io
+                initSocket();
+                
+                // Generate demo cards for now
+                generateDemoCards();
+                
+                // Generate demo players
+                generateDemoPlayers();
+                
+                // Start demo game simulation
+                startDemoGame();
+                
+            } catch (error) {
+                console.error('❌ Game init error:', error);
+            }
+        }
+
+        // Initialize Socket.io
+        function initSocket() {
+            socket = io();
+            
+            socket.on('connect', () => {
+                console.log('🔌 Connected to game server');
+            });
+            
+            socket.on('number_called', (data) => {
+                handleNumberCalled(data);
+            });
+            
+            socket.on('player_joined', (data) => {
+                updatePlayers(data.players);
+            });
+            
+            socket.on('bingo_claimed', (data) => {
+                handleBingoClaimed(data);
+            });
+            
+            socket.on('game_finished', (data) => {
+                handleGameFinished(data);
+            });
+        }
+
+        // Generate demo bingo cards
+        function generateDemoCards() {
+            myCards = [
+                generateBingoCard(),
+                generateBingoCard()
+            ];
+            
+            renderBingoCards();
+        }
+
+        // Generate a single bingo card
+        function generateBingoCard() {
+            const card = { numbers: [], marked: [] };
+            
+            // B column (1-15)
+            const bNumbers = generateUniqueNumbers(1, 15, 5);
+            // I column (16-30)
+            const iNumbers = generateUniqueNumbers(16, 30, 5);
+            // N column (31-45) with FREE space
+            const nNumbers = generateUniqueNumbers(31, 45, 4);
+            // G column (46-60)
+            const gNumbers = generateUniqueNumbers(46, 60, 5);
+            // O column (61-75)
+            const oNumbers = generateUniqueNumbers(61, 75, 5);
+            
+            // Arrange in grid
+            for (let row = 0; row < 5; row++) {
+                card.numbers.push(bNumbers[row]);
+                card.numbers.push(iNumbers[row]);
+                if (row === 2) {
+                    card.numbers.push('FREE');
+                    card.marked.push(12); // Mark FREE space
+                } else {
+                    const nIndex = row > 2 ? row - 1 : row;
+                    card.numbers.push(nNumbers[nIndex]);
+                }
+                card.numbers.push(gNumbers[row]);
+                card.numbers.push(oNumbers[row]);
+            }
+            
+            return card;
+        }
+
+        // Generate unique numbers in range
+        function generateUniqueNumbers(min, max, count) {
+            const numbers = [];
+            while (numbers.length < count) {
+                const num = Math.floor(Math.random() * (max - min + 1)) + min;
+                if (!numbers.includes(num)) {
+                    numbers.push(num);
+                }
+            }
+            return numbers;
+        }
+
+        // Render bingo cards
+        function renderBingoCards() {
+            const container = document.getElementById('bingoCards');
+            container.innerHTML = myCards.map((card, index) => `
+                <div class="bingo-card">
+                    <div class="card-header">
+                        <div class="card-title">Card ${index + 1}</div>
+                        <div class="auto-daub-indicator">AUTO-DAUB</div>
+                    </div>
+                    <div class="bingo-header">
+                        <div class="bingo-letter">B</div>
+                        <div class="bingo-letter">I</div>
+                        <div class="bingo-letter">N</div>
+                        <div class="bingo-letter">G</div>
+                        <div class="bingo-letter">O</div>
+                    </div>
+                    <div class="bingo-grid">
+                        ${card.numbers.map((num, i) => `
+                            <div class="bingo-cell ${num === 'FREE' ? 'free' : ''} ${card.marked && card.marked.includes(i) ? 'marked' : ''}" 
+                                 onclick="toggleCell(${index}, ${i})" data-number="${num}">
+                                ${num}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Generate demo players
+        function generateDemoPlayers() {
+            const players = [
+                { name: 'You', status: 'playing', avatar: 'Y' },
+                { name: 'Ahmed', status: 'playing', avatar: 'A' },
+                { name: 'Fatima', status: 'playing', avatar: 'F' },
+                { name: 'Yonas', status: 'playing', avatar: 'Y' }
+            ];
+            
+            updatePlayers(players);
+        }
+
+        // Update players display
+        function updatePlayers(players) {
+            const container = document.getElementById('playersGrid');
+            document.getElementById('playerCount').textContent = players.length;
+            
+            container.innerHTML = players.map(player => `
+                <div class="player-card">
+                    <div class="player-avatar">${player.avatar}</div>
+                    <div class="player-info">
+                        <div class="player-name">${player.name}</div>
+                        <div class="player-status status-${player.status}">${player.status.toUpperCase()}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Start demo game simulation
+        function startDemoGame() {
+            const demoNumbers = ['B-7', 'I-19', 'N-32', 'G-46', 'O-61', 'B-12', 'I-25', 'N-44', 'G-52', 'O-70'];
+            let index = 0;
+            
+            // Start timer
+            startGameTimer();
+            
+            // Call numbers every 7 seconds
+            const gameInterval = setInterval(() => {
+                if (index < demoNumbers.length) {
+                    handleNumberCalled({ number: demoNumbers[index] });
+                    index++;
+                } else {
+                    clearInterval(gameInterval);
+                }
+            }, 7000);
+        }
+
+        // Handle number called
+        function handleNumberCalled(data) {
+            currentBall = data.number;
+            calledNumbers.push(data.number);
+            
+            // Update display
+            document.getElementById('currentBall').textContent = data.number;
+            document.getElementById('calledCount').textContent = calledNumbers.length;
+            
+            // Add to called numbers grid
+            const calledContainer = document.getElementById('calledNumbers');
+            const numberElement = document.createElement('div');
+            numberElement.className = 'called-number';
+            numberElement.textContent = data.number;
+            calledContainer.appendChild(numberElement);
+            
+            // Auto-daub cards
+            myCards.forEach((card, cardIndex) => {
+                card.numbers.forEach((num, cellIndex) => {
+                    if (num === data.number && !card.marked.includes(cellIndex)) {
+                        card.marked.push(cellIndex);
+                    }
+                });
+            });
+            
+            // Re-render cards
+            renderBingoCards();
+            
+            // Check for bingo
+            if (checkForBingo()) {
+                document.getElementById('bingoButton').style.display = 'block';
+            }
+            
+            // Play sound
+            if (soundEnabled) {
+                playCallSound();
+            }
+            
+            // Reset timer
+            gameTimer = 7;
+        }
+
+        // Start game timer
+        function startGameTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                gameTimer--;
+                document.getElementById('ballTimer').textContent = `Next ball in: ${gameTimer}s`;
+                
+                if (gameTimer <= 0) {
+                    gameTimer = 7; // Reset for next number
+                }
+            }, 1000);
+        }
+
+        // Toggle cell marking
+        function toggleCell(cardIndex, cellIndex) {
+            const card = myCards[cardIndex];
+            const number = card.numbers[cellIndex];
+            
+            // Can't toggle FREE space or auto-daubed numbers
+            if (number === 'FREE' || calledNumbers.includes(number)) return;
+            
+            // Toggle marked state
+            if (card.marked.includes(cellIndex)) {
+                card.marked = card.marked.filter(i => i !== cellIndex);
+            } else {
+                card.marked.push(cellIndex);
+            }
+            
+            // Re-render cards
+            renderBingoCards();
+            
+            // Check for bingo
+            if (checkForBingo()) {
+                document.getElementById('bingoButton').style.display = 'block';
+            } else {
+                document.getElementById('bingoButton').style.display = 'none';
+            }
+        }
+
+        // Check for bingo
+        function checkForBingo() {
+            return myCards.some(card => {
+                // Check rows
+                for (let row = 0; row < 5; row++) {
+                    let rowComplete = true;
+                    for (let col = 0; col < 5; col++) {
+                        const index = row * 5 + col;
+                        const number = card.numbers[index];
+                        if (number !== 'FREE' && !card.marked.includes(index)) {
+                            rowComplete = false;
+                            break;
+                        }
+                    }
+                    if (rowComplete) return true;
+                }
+                
+                // Check columns
+                for (let col = 0; col < 5; col++) {
+                    let colComplete = true;
+                    for (let row = 0; row < 5; row++) {
+                        const index = row * 5 + col;
+                        const number = card.numbers[index];
+                        if (number !== 'FREE' && !card.marked.includes(index)) {
+                            colComplete = false;
+                            break;
+                        }
+                    }
+                    if (colComplete) return true;
+                }
+                
+                // Check diagonals
+                let diag1Complete = true;
+                let diag2Complete = true;
+                
+                for (let i = 0; i < 5; i++) {
+                    const index1 = i * 5 + i;
+                    const index2 = i * 5 + (4 - i);
+                    const number1 = card.numbers[index1];
+                    const number2 = card.numbers[index2];
+                    
+                    if (number1 !== 'FREE' && !card.marked.includes(index1)) {
+                        diag1Complete = false;
+                    }
+                    if (number2 !== 'FREE' && !card.marked.includes(index2)) {
+                        diag2Complete = false;
+                    }
+                }
+                
+                return diag1Complete || diag2Complete;
+            });
+        }
+
+        // Claim bingo
+        function claimBingo() {
+            if (socket) {
+                socket.emit('claim_bingo', {
+                    gameId: 1234,
+                    userId: 'demo',
+                    cards: myCards
+                });
+            }
+            
+            alert('🏆 BINGO claimed! Waiting for verification...');
+            document.getElementById('bingoButton').style.display = 'none';
+        }
+
+        // Handle bingo claimed by other player
+        function handleBingoClaimed(data) {
+            alert(`🏆 ${data.playerName} claimed BINGO! Verifying...`);
+        }
+
+        // Handle game finished
+        function handleGameFinished(data) {
+            clearInterval(timerInterval);
+            
+            let message = '🎉 Game Finished!\n\n';
+            if (data.winners && data.winners.length > 0) {
+                message += `Winners:\n${data.winners.map(w => `🏆 ${w.name}: ${w.prize} ETB`).join('\n')}`;
+            } else {
+                message += 'No winners this round.';
+            }
+            
+            alert(message);
+            
+            // Return to dashboard after 3 seconds
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 3000);
+        }
+
+        // Game controls
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = event.target;
+            btn.textContent = soundEnabled ? '🔊' : '🔇';
+        }
+
+        function showHelp() {
+            alert('🎮 How to Play Kebrchacha Bingo:\n\n1. Numbers are called every 7 seconds\n2. Your cards are auto-daubed\n3. Get 5 in a row (horizontal, vertical, or diagonal)\n4. Click BINGO when you win!\n5. First to claim wins the prize\n\n🎯 Good luck!');
+        }
+
+        function leaveGame() {
+            if (confirm('Are you sure you want to leave the game?')) {
+                window.location.href = '/';
+            }
+        }
+
+        // Play call sound (mock)
+        function playCallSound() {
+            // In a real implementation, play actual sound
+            console.log('🔊 Playing call sound for:', currentBall);
+        }
+
+        // Initialize game when page loads
+        document.addEventListener('DOMContentLoaded', initGame);
+    </script>
+</body>
+</html>

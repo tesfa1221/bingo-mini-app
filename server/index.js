@@ -63,6 +63,11 @@ app.get('/admin', (req, res) => {
   res.sendFile(__dirname + '/public/admin.html');
 });
 
+// Game route
+app.get('/game', (req, res) => {
+  res.sendFile(__dirname + '/public/game.html');
+});
+
 // Handle preflight requests
 app.options('*', (req, res) => {
   res.header('Access-Control-Allow-Origin', '*');
