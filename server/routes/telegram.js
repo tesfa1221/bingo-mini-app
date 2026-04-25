@@ -3,7 +3,7 @@ const axios = require('axios');
 const router = express.Router();
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const WEBAPP_URL = 'https://negattech.com/kbingo/';
+const WEBAPP_URL = 'https://negattech.com/';
 
 // Telegram Bot API helper function
 async function sendMessage(chatId, text, options = {}) {
